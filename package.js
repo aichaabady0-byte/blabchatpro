@@ -4,7 +4,8 @@
   "description": "dqsdqsdqsdqsdqsd",
   "main": "app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node app.js",
+    "build": "echo 'Pas de build requis'"
   },
   "repository": {
     "type": "git",
