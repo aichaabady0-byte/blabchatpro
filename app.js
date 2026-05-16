@@ -1,330 +1,666 @@
-// ═══════════════════════════════════════════════════════════════
-//  PELO AIRWAYS — app.js
-//  Firebase : Auth + Firestore + Realtime DB
-//  Admin    : aichaabady0@gmail.com
-// ═══════════════════════════════════════════════════════════════
+/**
+ * ═══════════════════════════════════════════════════════════
+ *  PELO AIRWAYS — script.js
+ *  Gestion de la navigation, des sièges et du flux de réservation
+ *  Appelle App.* (défini dans app.js / Firebase)
+ * ═══════════════════════════════════════════════════════════
+ */
 
-import { initializeApp }                        from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAnalytics }                         from "https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js";
-import {
-  getAuth,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut,
-  onAuthStateChanged,
-  updateProfile,
-}                                               from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import {
-  getFirestore,
-  collection, doc,
-  setDoc, getDoc, getDocs,
-  addDoc, updateDoc, deleteDoc,
-  query, where, orderBy,
-  serverTimestamp, writeBatch,
-}                                               from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import {
-  getDatabase, ref, set, get, push,
-}                                               from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+// ─────────────────────────────────────────────────────────────
+//  GARDE-FOU : s'assure qu'App existe même si app.js est vide
+// ─────────────────────────────────────────────────────────────
+window.App = window.App || {};
+App.saveReservation = App.saveReservation || function(data) {
+  console.log("[App.saveReservation] (stub) données reçues :", data);
+  return Promise.resolve({ success: true, bookingId: "LOCAL_" + Date.now() });
+};
+App.getFlightInfo   = App.getFlightInfo   || function(id) {
+  console.log("[App.getFlightInfo] (stub) id :", id);
+  return Promise.resolve(null);
+};
+App.processPayment  = App.processPayment  || function(amount) {
+  console.log("[App.processPayment] (stub) montant :", amount);
+  return Promise.resolve({ success: true });
+};
+App.resetBooking    = App.resetBooking    || function() { location.reload(); };
 
-// ─────────────────────────────────────────
-//  CONFIG & INIT
-// ─────────────────────────────────────────
-const firebaseConfig = {
-  apiKey:            "AIzaSyD7nXt2AKL5ugYwMiLEyBizZ7O8eEAjeI8",
-  authDomain:        "pelo-airways.firebaseapp.com",
-  databaseURL:       "https://pelo-airways-default-rtdb.firebaseio.com",
-  projectId:         "pelo-airways",
-  storageBucket:     "pelo-airways.firebasestorage.app",
-  messagingSenderId: "467053762663",
-  appId:             "1:467053762663:web:e48a493fe1bade54cf5cc2",
-  measurementId:     "G-0PHJLT1YHC",
+// ─────────────────────────────────────────────────────────────
+//  ÉTAT GLOBAL DE LA RÉSERVATION
+// ─────────────────────────────────────────────────────────────
+const state = {
+  searchParams: { fromIata: "BOD", toIata: "", date: "", time: "" },
+  availableFlights: [],       // vols retournés par la recherche
+  selectedFlight: null,       // vol choisi
+  selectedSeat: null,         // ex: "3C"
+  takenSeats: [],             // sièges déjà occupés (générés aléatoirement)
+  bookingResult: null,        // réponse de App.saveReservation
 };
 
-const firebaseApp = initializeApp(firebaseConfig);
-const analytics   = getAnalytics(firebaseApp);
-const auth        = getAuth(firebaseApp);
-const db          = getFirestore(firebaseApp);
-const rtdb        = getDatabase(firebaseApp);
-
-export const ADMIN_EMAIL = "aichaabady0@gmail.com";
-
-// ─────────────────────────────────────────
-//  SEED DATA
-// ─────────────────────────────────────────
-const SEED_DESTINATIONS = [
-  { id:"dest_BCN", name:"Barcelone",   country:"Espagne",            iata:"BCN", airport:"Barcelone-El Prat",       description:"Capitale de la Catalogne, Sagrada Família et plages magnifiques.",   imageUrl:"https://images.unsplash.com/photo-1539037116277-4db20889f2d4?w=600", popular:true  },
-  { id:"dest_LIS", name:"Lisbonne",    country:"Portugal",           iata:"LIS", airport:"Humberto Delgado",         description:"Tramways colorés, pastéis de nata et couchers de soleil inoubliables.", imageUrl:"https://images.unsplash.com/photo-1555881400-74d7acaacd8b?w=600", popular:true  },
-  { id:"dest_DUB", name:"Dublin",      country:"Irlande",            iata:"DUB", airport:"Aéroport de Dublin",       description:"Pubs chaleureux, verdure et culture celtique authentique.",           imageUrl:"https://images.unsplash.com/photo-1549918864-48ac978761a4?w=600", popular:false },
-  { id:"dest_ROM", name:"Rome",        country:"Italie",             iata:"FCO", airport:"Leonardo da Vinci",        description:"Colisée, Vatican, fontaine de Trevi — la Ville Éternelle.",          imageUrl:"https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=600", popular:true  },
-  { id:"dest_AMS", name:"Amsterdam",   country:"Pays-Bas",           iata:"AMS", airport:"Schiphol",                 description:"Canaux romantiques, musées world-class et vélos partout.",           imageUrl:"https://images.unsplash.com/photo-1534351590666-13e3e96b5017?w=600", popular:true  },
-  { id:"dest_ATH", name:"Athènes",     country:"Grèce",              iata:"ATH", airport:"Elefthérios-Venizélos",   description:"L'Acropole, l'histoire vivante et les meilleures tavernes.",          imageUrl:"https://images.unsplash.com/photo-1555993539-1732b0258235?w=600", popular:true  },
-  { id:"dest_PRG", name:"Prague",      country:"République Tchèque", iata:"PRG", airport:"Václav Havel",            description:"La ville aux cent clochers, médiévale et magique.",                   imageUrl:"https://images.unsplash.com/photo-1592906209472-a36b1f3782ef?w=600", popular:false },
-  { id:"dest_MLA", name:"Malte",       country:"Malte",              iata:"MLA", airport:"Int. de Malte",           description:"Île méditerranéenne aux eaux turquoise et à l'histoire millénaire.", imageUrl:"https://images.unsplash.com/photo-1559582798-678dfc71ccd8?w=600", popular:false },
-  { id:"dest_MAD", name:"Madrid",      country:"Espagne",            iata:"MAD", airport:"Adolfo Suárez Barajas",   description:"Prado, tapas, flamenco — la capitale vibrante de l'Espagne.",         imageUrl:"https://images.unsplash.com/photo-1543783207-ec64e4d95325?w=600", popular:true  },
-  { id:"dest_VIE", name:"Vienne",      country:"Autriche",           iata:"VIE", airport:"Schwechat",               description:"Palais impériaux, cafés historiques et musique classique.",           imageUrl:"https://images.unsplash.com/photo-1516550893923-42d28e5677af?w=600", popular:false },
+// ─────────────────────────────────────────────────────────────
+//  DONNÉES SEED LOCALES (miroir de app.js pour fonctionnement offline)
+// ─────────────────────────────────────────────────────────────
+const LOCAL_FLIGHTS = [
+  { id:"FL001", flightNumber:"PW101", from:{city:"Bordeaux",iata:"BOD"}, to:{city:"Barcelone",iata:"BCN"},  departureDate:"2026-06-10", departureTime:"07:30", arrivalTime:"09:15", durationMin:105, price:29.99, seatsAvailable:47,  status:"active",   aircraft:"Boeing 737-800" },
+  { id:"FL002", flightNumber:"PW102", from:{city:"Bordeaux",iata:"BOD"}, to:{city:"Lisbonne",iata:"LIS"},   departureDate:"2026-06-12", departureTime:"10:00", arrivalTime:"11:45", durationMin:105, price:34.99, seatsAvailable:112, status:"active",   aircraft:"Boeing 737-800" },
+  { id:"FL003", flightNumber:"PW203", from:{city:"Bordeaux",iata:"BOD"}, to:{city:"Rome",iata:"FCO"},       departureDate:"2026-06-15", departureTime:"14:20", arrivalTime:"16:40", durationMin:140, price:49.99, seatsAvailable:23,  status:"active",   aircraft:"Airbus A320"    },
+  { id:"FL004", flightNumber:"PW304", from:{city:"Bordeaux",iata:"BOD"}, to:{city:"Amsterdam",iata:"AMS"},  departureDate:"2026-06-18", departureTime:"06:45", arrivalTime:"08:55", durationMin:130, price:39.99, seatsAvailable:0,   status:"full",     aircraft:"Boeing 737-800" },
+  { id:"FL005", flightNumber:"PW405", from:{city:"Bordeaux",iata:"BOD"}, to:{city:"Dublin",iata:"DUB"},     departureDate:"2026-06-20", departureTime:"11:30", arrivalTime:"13:00", durationMin:150, price:44.99, seatsAvailable:78,  status:"active",   aircraft:"Airbus A320"    },
+  { id:"FL006", flightNumber:"PW506", from:{city:"Bordeaux",iata:"BOD"}, to:{city:"Athènes",iata:"ATH"},    departureDate:"2026-06-22", departureTime:"08:00", arrivalTime:"11:30", durationMin:210, price:59.99, seatsAvailable:55,  status:"active",   aircraft:"Airbus A321"    },
+  { id:"FL007", flightNumber:"PW607", from:{city:"Bordeaux",iata:"BOD"}, to:{city:"Prague",iata:"PRG"},     departureDate:"2026-06-25", departureTime:"16:10", arrivalTime:"18:50", durationMin:160, price:24.99, seatsAvailable:134, status:"active",   aircraft:"Boeing 737-800" },
+  { id:"FL008", flightNumber:"PW707", from:{city:"Bordeaux",iata:"BOD"}, to:{city:"Malte",iata:"MLA"},      departureDate:"2026-07-01", departureTime:"09:00", arrivalTime:"12:15", durationMin:195, price:54.99, seatsAvailable:88,  status:"active",   aircraft:"Airbus A320"    },
+  { id:"FL009", flightNumber:"PW808", from:{city:"Bordeaux",iata:"BOD"}, to:{city:"Madrid",iata:"MAD"},     departureDate:"2026-07-05", departureTime:"13:00", arrivalTime:"14:45", durationMin:105, price:19.99, seatsAvailable:160, status:"active",   aircraft:"Boeing 737-800" },
+  { id:"FL010", flightNumber:"PW909", from:{city:"Bordeaux",iata:"BOD"}, to:{city:"Barcelone",iata:"BCN"},  departureDate:"2026-06-05", departureTime:"15:30", arrivalTime:"17:15", durationMin:105, price:19.99, seatsAvailable:0,   status:"cancelled",aircraft:"Boeing 737-800" },
 ];
 
-const SEED_FLIGHTS = [
-  { id:"FL001", flightNumber:"PW101", from:{city:"Bordeaux",iata:"BOD",airport:"Bordeaux-Mérignac"}, to:{city:"Barcelone",iata:"BCN",airport:"El Prat"},         departureDate:"2026-06-10", departureTime:"07:30", arrivalTime:"09:15", durationMin:105, price:29.99, seatsTotal:189, seatsAvailable:47,  status:"active",   aircraft:"Boeing 737-800" },
-  { id:"FL002", flightNumber:"PW102", from:{city:"Bordeaux",iata:"BOD",airport:"Bordeaux-Mérignac"}, to:{city:"Lisbonne",iata:"LIS",airport:"Humberto Delgado"}, departureDate:"2026-06-12", departureTime:"10:00", arrivalTime:"11:45", durationMin:105, price:34.99, seatsTotal:189, seatsAvailable:112, status:"active",   aircraft:"Boeing 737-800" },
-  { id:"FL003", flightNumber:"PW203", from:{city:"Bordeaux",iata:"BOD",airport:"Bordeaux-Mérignac"}, to:{city:"Rome",iata:"FCO",airport:"Leonardo da Vinci"},    departureDate:"2026-06-15", departureTime:"14:20", arrivalTime:"16:40", durationMin:140, price:49.99, seatsTotal:189, seatsAvailable:23,  status:"active",   aircraft:"Airbus A320"    },
-  { id:"FL004", flightNumber:"PW304", from:{city:"Bordeaux",iata:"BOD",airport:"Bordeaux-Mérignac"}, to:{city:"Amsterdam",iata:"AMS",airport:"Schiphol"},        departureDate:"2026-06-18", departureTime:"06:45", arrivalTime:"08:55", durationMin:130, price:39.99, seatsTotal:189, seatsAvailable:0,   status:"full",     aircraft:"Boeing 737-800" },
-  { id:"FL005", flightNumber:"PW405", from:{city:"Bordeaux",iata:"BOD",airport:"Bordeaux-Mérignac"}, to:{city:"Dublin",iata:"DUB",airport:"Aéroport de Dublin"}, departureDate:"2026-06-20", departureTime:"11:30", arrivalTime:"13:00", durationMin:150, price:44.99, seatsTotal:189, seatsAvailable:78,  status:"active",   aircraft:"Airbus A320"    },
-  { id:"FL006", flightNumber:"PW506", from:{city:"Bordeaux",iata:"BOD",airport:"Bordeaux-Mérignac"}, to:{city:"Athènes",iata:"ATH",airport:"Elefthérios"},       departureDate:"2026-06-22", departureTime:"08:00", arrivalTime:"11:30", durationMin:210, price:59.99, seatsTotal:189, seatsAvailable:55,  status:"active",   aircraft:"Airbus A321"    },
-  { id:"FL007", flightNumber:"PW607", from:{city:"Bordeaux",iata:"BOD",airport:"Bordeaux-Mérignac"}, to:{city:"Prague",iata:"PRG",airport:"Václav Havel"},       departureDate:"2026-06-25", departureTime:"16:10", arrivalTime:"18:50", durationMin:160, price:24.99, seatsTotal:189, seatsAvailable:134, status:"active",   aircraft:"Boeing 737-800" },
-  { id:"FL008", flightNumber:"PW707", from:{city:"Bordeaux",iata:"BOD",airport:"Bordeaux-Mérignac"}, to:{city:"Malte",iata:"MLA",airport:"Int. de Malte"},       departureDate:"2026-07-01", departureTime:"09:00", arrivalTime:"12:15", durationMin:195, price:54.99, seatsTotal:189, seatsAvailable:88,  status:"active",   aircraft:"Airbus A320"    },
-  { id:"FL009", flightNumber:"PW808", from:{city:"Bordeaux",iata:"BOD",airport:"Bordeaux-Mérignac"}, to:{city:"Madrid",iata:"MAD",airport:"Adolfo Suárez"},      departureDate:"2026-07-05", departureTime:"13:00", arrivalTime:"14:45", durationMin:105, price:19.99, seatsTotal:189, seatsAvailable:160, status:"active",   aircraft:"Boeing 737-800" },
-  { id:"FL010", flightNumber:"PW909", from:{city:"Bordeaux",iata:"BOD",airport:"Bordeaux-Mérignac"}, to:{city:"Barcelone",iata:"BCN",airport:"El Prat"},         departureDate:"2026-06-05", departureTime:"15:30", arrivalTime:"17:15", durationMin:105, price:19.99, seatsTotal:189, seatsAvailable:0,   status:"cancelled", aircraft:"Boeing 737-800" },
+const LOCAL_DESTINATIONS = [
+  { iata:"BCN", name:"Barcelone",  country:"Espagne",   imageUrl:"https://images.unsplash.com/photo-1539037116277-4db20889f2d4?w=600", priceFrom:19.99 },
+  { iata:"LIS", name:"Lisbonne",   country:"Portugal",  imageUrl:"https://images.unsplash.com/photo-1555881400-74d7acaacd8b?w=600", priceFrom:34.99 },
+  { iata:"FCO", name:"Rome",       country:"Italie",    imageUrl:"https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=600", priceFrom:49.99 },
+  { iata:"AMS", name:"Amsterdam",  country:"Pays-Bas",  imageUrl:"https://images.unsplash.com/photo-1534351590666-13e3e96b5017?w=600", priceFrom:39.99 },
+  { iata:"ATH", name:"Athènes",    country:"Grèce",     imageUrl:"https://images.unsplash.com/photo-1555993539-1732b0258235?w=600", priceFrom:59.99 },
+  { iata:"MAD", name:"Madrid",     country:"Espagne",   imageUrl:"https://images.unsplash.com/photo-1543783207-ec64e4d95325?w=600", priceFrom:19.99 },
 ];
 
-const SEED_PROMOTIONS = [
-  { id:"promo_summer",     title:"Les bons plans de l'été",   subtitle:"",                              description:"Partez cet été à prix mini sur toutes nos destinations.",              priceFrom:24.99, badgeText:"À partir de 24,99 €", startDate:"2026-05-01", endDate:"2026-08-31", active:true,  priority:1 },
-  { id:"promo_graduation", title:"Ils ont survécu à la fac ?", subtitle:"Il est temps de faire une pause", description:"Récompensez-les avec une carte cadeau Pelo Airways de 25 € ou plus.", priceFrom:25.00, badgeText:"Carte cadeau",         startDate:"2026-06-01", endDate:"2026-07-31", active:true,  priority:2 },
-  { id:"promo_autumn",     title:"Automne en Europe",         subtitle:"",                              description:"Escapades d'automne à prix doux. Barcelone, Lisbonne, Prague...",      priceFrom:19.99, badgeText:"Dès 19,99 €",          startDate:"2026-09-01", endDate:"2026-11-30", active:false, priority:3 },
-];
+// ─────────────────────────────────────────────────────────────
+//  HELPERS UI
+// ─────────────────────────────────────────────────────────────
 
-const SEED_ADS = [
-  { id:"ad_hero_01",    title:"Vols pas chers vers l'Europe",    description:"Réservez maintenant et économisez jusqu'à 60%.", ctaText:"Voir les offres", ctaLink:"search.html", position:"hero",    active:true  },
-  { id:"ad_banner_01",  title:"Location de voiture dès 15€/jour", description:"Partenaires vérifiés dans tous nos aéroports.", ctaText:"Réserver",       ctaLink:"#",           position:"banner",  active:true  },
-  { id:"ad_sidebar_01", title:"Hôtels à prix réduit",            description:"Plus de 10 000 hôtels négociés pour vous.",      ctaText:"Découvrir",      ctaLink:"#",           position:"sidebar", active:true  },
-  { id:"ad_sidebar_02", title:"Assurance voyage",                description:"Voyagez l'esprit tranquille dès 4,99€.",         ctaText:"En savoir plus", ctaLink:"#",           position:"sidebar", active:false },
-];
-
-// ─────────────────────────────────────────
-//  SEEDER
-// ─────────────────────────────────────────
-export async function seedAll() {
-  try {
-    const batch = writeBatch(db);
-    for (const d of SEED_DESTINATIONS) batch.set(doc(db,"destinations",d.id), {...d, createdAt:serverTimestamp()});
-    for (const f of SEED_FLIGHTS)      batch.set(doc(db,"flights",f.id),      {...f, createdAt:serverTimestamp()});
-    for (const p of SEED_PROMOTIONS)   batch.set(doc(db,"promotions",p.id),   {...p, createdAt:serverTimestamp()});
-    for (const a of SEED_ADS)          batch.set(doc(db,"ads",a.id),          {...a, createdAt:serverTimestamp()});
-    await batch.commit();
-    await set(ref(rtdb,"stats"), { totalFlights:SEED_FLIGHTS.length, activeFlights:SEED_FLIGHTS.filter(f=>f.status==="active").length, totalDestinations:SEED_DESTINATIONS.length, visitors:0 });
-    console.log("✅ Seed terminé !");
-    return true;
-  } catch(e) { console.error("Seed error:", e); return false; }
+/** Affiche / masque le loader */
+function setLoading(visible) {
+  document.getElementById("loading-overlay").classList.toggle("visible", visible);
 }
 
-// ─────────────────────────────────────────
-//  AUTH
-// ─────────────────────────────────────────
-export async function registerUser(email, password, displayName) {
-  const cred = await createUserWithEmailAndPassword(auth, email, password);
-  await updateProfile(cred.user, { displayName });
-  await setDoc(doc(db,"users",cred.user.uid), {
-    uid: cred.user.uid, email, displayName,
-    role: email === ADMIN_EMAIL ? "admin" : "user",
-    bookings: [], createdAt: serverTimestamp(), lastLogin: serverTimestamp(),
-  });
-  return cred.user;
+/** Toast notification */
+function toast(message, type = "default") {
+  const container = document.getElementById("toast-container");
+  const el = document.createElement("div");
+  el.className = `toast ${type}`;
+  el.textContent = message;
+  container.appendChild(el);
+  setTimeout(() => el.remove(), 3500);
 }
 
-export async function loginUser(email, password) {
-  const cred = await signInWithEmailAndPassword(auth, email, password);
-  await updateDoc(doc(db,"users",cred.user.uid), { lastLogin: serverTimestamp() }).catch(()=>{});
-  return cred.user;
+/** Formate une durée en minutes → "1h 45min" */
+function formatDuration(min) {
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return h > 0 ? `${h}h${m > 0 ? ` ${m}min` : ""}` : `${m} min`;
 }
 
-export async function logoutUser() { await signOut(auth); }
-
-export function onAuthChange(cb) { return onAuthStateChanged(auth, cb); }
-
-export async function getUserProfile(uid) {
-  const snap = await getDoc(doc(db,"users",uid));
-  return snap.exists() ? snap.data() : null;
+/** Formate un prix */
+function formatPrice(p) {
+  return p.toFixed(2).replace(".", ",") + " €";
 }
 
-export async function isAdmin() {
-  const user = auth.currentUser;
-  if (!user) return false;
-  if (user.email === ADMIN_EMAIL) return true;
-  const p = await getUserProfile(user.uid);
-  return p?.role === "admin";
+/** Formate une date ISO → "10 juin 2026" */
+function formatDate(iso) {
+  if (!iso) return "—";
+  const [y, m, d] = iso.split("-");
+  const months = ["janv.","févr.","mars","avr.","mai","juin","juil.","août","sept.","oct.","nov.","déc."];
+  return `${parseInt(d)} ${months[parseInt(m)-1]} ${y}`;
 }
 
-export function currentUser() { return auth.currentUser; }
+// ─────────────────────────────────────────────────────────────
+//  STEPPER
+// ─────────────────────────────────────────────────────────────
+const STEPS = ["section-search","section-results","section-seat","section-payment","section-confirmation"];
 
-// ─────────────────────────────────────────
-//  DESTINATIONS
-// ─────────────────────────────────────────
-export async function getAllDestinations() {
-  const snap = await getDocs(collection(db,"destinations"));
-  return snap.docs.map(d=>({id:d.id,...d.data()}));
-}
-export async function getPopularDestinations() {
-  const q = query(collection(db,"destinations"), where("popular","==",true));
-  const snap = await getDocs(q);
-  return snap.docs.map(d=>({id:d.id,...d.data()}));
-}
-export async function getDestinationById(id) {
-  const snap = await getDoc(doc(db,"destinations",id));
-  return snap.exists() ? {id:snap.id,...snap.data()} : null;
-}
-export async function addDestination(data)      { return await addDoc(collection(db,"destinations"), {...data, createdAt:serverTimestamp()}); }
-export async function updateDestination(id,data){ await updateDoc(doc(db,"destinations",id), {...data, updatedAt:serverTimestamp()}); }
-export async function deleteDestination(id)     { await deleteDoc(doc(db,"destinations",id)); }
+function goToStep(sectionId) {
+  // Cache toutes les sections
+  document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+  // Active la bonne
+  const target = document.getElementById(sectionId);
+  if (target) target.classList.add("active");
 
-// ─────────────────────────────────────────
-//  VOLS
-// ─────────────────────────────────────────
-export async function getActiveFlights() {
-  const q = query(collection(db,"flights"), where("status","==","active"), orderBy("departureDate"));
-  const snap = await getDocs(q);
-  return snap.docs.map(d=>({id:d.id,...d.data()}));
-}
-export async function getAllFlights() {
-  const snap = await getDocs(query(collection(db,"flights"), orderBy("departureDate")));
-  return snap.docs.map(d=>({id:d.id,...d.data()}));
-}
-export async function searchFlights({fromIata, toIata, date}) {
-  let constraints = [
-    collection(db,"flights"),
-    where("from.iata","==",fromIata),
-    where("to.iata","==",toIata),
-  ];
-  const q = query(...constraints);
-  const snap = await getDocs(q);
-  let results = snap.docs.map(d=>({id:d.id,...d.data()})).filter(f=>f.status!=="cancelled");
-  if (date) results = results.filter(f=>f.departureDate===date);
-  return results;
-}
-export async function getFlightById(id) {
-  const snap = await getDoc(doc(db,"flights",id));
-  return snap.exists() ? {id:snap.id,...snap.data()} : null;
-}
-export async function addFlight(data)      { return await addDoc(collection(db,"flights"), {...data, createdAt:serverTimestamp()}); }
-export async function updateFlight(id,data){ await updateDoc(doc(db,"flights",id), {...data, updatedAt:serverTimestamp()}); }
-export async function deleteFlight(id)     { await deleteDoc(doc(db,"flights",id)); }
-export async function setFlightStatus(id,status){ await updateDoc(doc(db,"flights",id), {status, updatedAt:serverTimestamp()}); }
-
-// ─────────────────────────────────────────
-//  RÉSERVATIONS
-// ─────────────────────────────────────────
-export async function createBooking(flightId, passengers) {
-  const user = auth.currentUser;
-  if (!user) throw new Error("Connectez-vous pour réserver.");
-  const flight = await getFlightById(flightId);
-  if (!flight) throw new Error("Vol introuvable.");
-  if (flight.status === "cancelled") throw new Error("Ce vol est annulé.");
-  if (flight.seatsAvailable < passengers.length) throw new Error("Pas assez de places.");
-
-  const totalPrice = flight.price * passengers.length;
-  const ref_ = await addDoc(collection(db,"bookings"), {
-    flightId, flightNumber: flight.flightNumber,
-    userId: user.uid, userEmail: user.email,
-    passengers, passengersCount: passengers.length,
-    totalPrice, status: "confirmed",
-    createdAt: serverTimestamp(),
-    flight: { from:flight.from, to:flight.to, departureDate:flight.departureDate, departureTime:flight.departureTime, arrivalTime:flight.arrivalTime, durationMin:flight.durationMin },
+  // Met à jour le stepper
+  const stepIndex = STEPS.indexOf(sectionId); // 0-based
+  ["step-1","step-2","step-3","step-4"].forEach((id, i) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.remove("active","done");
+    // stepIndex 0 = recherche (step-1)
+    // stepIndex 1 = résultats → vol (step-2 active)
+    // stepIndex 2 = siège (step-3 active)
+    // stepIndex 3 = paiement (step-4 active)
+    // stepIndex 4 = confirmation (tout done)
+    if (stepIndex === 4) {
+      el.classList.add("done");
+    } else if (i + 1 < stepIndex) {
+      el.classList.add("done");
+    } else if (i + 1 === stepIndex) {
+      el.classList.add("active");
+    }
   });
 
-  const newSeats = flight.seatsAvailable - passengers.length;
-  await updateDoc(doc(db,"flights",flightId), {
-    seatsAvailable: newSeats,
-    status: newSeats <= 0 ? "full" : "active",
-    updatedAt: serverTimestamp(),
-  });
-
-  const uSnap = await getDoc(doc(db,"users",user.uid));
-  const prev  = uSnap.data()?.bookings || [];
-  await updateDoc(doc(db,"users",user.uid), { bookings:[...prev,ref_.id] });
-
-  return { bookingId: ref_.id, totalPrice };
+  // Scroll top
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-export async function getUserBookings() {
-  const user = auth.currentUser;
-  if (!user) return [];
-  const q = query(collection(db,"bookings"), where("userId","==",user.uid), orderBy("createdAt","desc"));
-  const snap = await getDocs(q);
-  return snap.docs.map(d=>({id:d.id,...d.data()}));
+// ─────────────────────────────────────────────────────────────
+//  DESTINATIONS POPULAIRES
+// ─────────────────────────────────────────────────────────────
+function renderPopularDestinations(destinations) {
+  const grid = document.getElementById("dest-grid");
+  if (!grid) return;
+  grid.innerHTML = destinations.map(d => `
+    <div class="dest-card" onclick="quickSelectDestination('${d.iata}')">
+      <img src="${d.imageUrl}" alt="${d.name}" loading="lazy" />
+      <div class="dest-card-overlay"></div>
+      <div class="dest-card-info">
+        <div class="dest-city">${d.name}</div>
+        <div class="dest-country">${d.country}</div>
+        <div class="dest-price">À partir de ${formatPrice(d.priceFrom)}</div>
+      </div>
+    </div>
+  `).join("");
 }
 
-export async function getAllBookings() {
-  const snap = await getDocs(query(collection(db,"bookings"), orderBy("createdAt","desc")));
-  return snap.docs.map(d=>({id:d.id,...d.data()}));
-}
-
-export async function cancelBooking(bookingId) {
-  const snap = await getDoc(doc(db,"bookings",bookingId));
-  if (!snap.exists()) throw new Error("Réservation introuvable.");
-  const booking = snap.data();
-  const user    = auth.currentUser;
-  if (booking.userId !== user?.uid && user?.email !== ADMIN_EMAIL) throw new Error("Accès refusé.");
-  const flight = await getFlightById(booking.flightId);
-  if (flight && flight.status !== "cancelled") {
-    await updateDoc(doc(db,"flights",booking.flightId), {
-      seatsAvailable: flight.seatsAvailable + booking.passengersCount,
-      status: "active", updatedAt: serverTimestamp(),
-    });
+/** Sélection rapide via carte destination */
+function quickSelectDestination(iata) {
+  const select = document.getElementById("to-city");
+  if (select) {
+    select.value = iata;
+    toast(`Destination sélectionnée : ${iata}`, "default");
   }
-  await updateDoc(doc(db,"bookings",bookingId), { status:"cancelled", cancelledAt:serverTimestamp() });
+}
+window.quickSelectDestination = quickSelectDestination; // exposé au HTML
+
+// ─────────────────────────────────────────────────────────────
+//  RECHERCHE DE VOLS
+// ─────────────────────────────────────────────────────────────
+
+/** Filtre les heures selon la plage */
+function matchesTimeSlot(departureTime, slot) {
+  if (!slot) return true;
+  const [h] = departureTime.split(":").map(Number);
+  if (slot === "morning")   return h >= 6  && h < 12;
+  if (slot === "afternoon") return h >= 12 && h < 18;
+  if (slot === "evening")   return h >= 18;
+  return true;
 }
 
-// ─────────────────────────────────────────
-//  PROMOTIONS
-// ─────────────────────────────────────────
-export async function getActivePromotions() {
-  const q = query(collection(db,"promotions"), where("active","==",true), orderBy("priority"));
-  const snap = await getDocs(q);
-  return snap.docs.map(d=>({id:d.id,...d.data()}));
-}
-export async function getAllPromotions() {
-  const snap = await getDocs(collection(db,"promotions"));
-  return snap.docs.map(d=>({id:d.id,...d.data()}));
-}
-export async function addPromotion(data)      { return await addDoc(collection(db,"promotions"), {...data, createdAt:serverTimestamp()}); }
-export async function updatePromotion(id,data){ await updateDoc(doc(db,"promotions",id), {...data, updatedAt:serverTimestamp()}); }
-export async function deletePromotion(id)     { await deleteDoc(doc(db,"promotions",id)); }
+async function searchFlights() {
+  const fromIata = document.getElementById("from-city").value;
+  const toIata   = document.getElementById("to-city").value;
+  const date     = document.getElementById("travel-date").value;
+  const time     = document.getElementById("travel-time").value;
 
-// ─────────────────────────────────────────
-//  PUBS
-// ─────────────────────────────────────────
-export async function getAdsByPosition(position) {
-  const q = query(collection(db,"ads"), where("position","==",position), where("active","==",true));
-  const snap = await getDocs(q);
-  return snap.docs.map(d=>({id:d.id,...d.data()}));
-}
-export async function getAllAds() {
-  const snap = await getDocs(collection(db,"ads"));
-  return snap.docs.map(d=>({id:d.id,...d.data()}));
-}
-export async function addAd(data)      { return await addDoc(collection(db,"ads"), {...data, createdAt:serverTimestamp()}); }
-export async function updateAd(id,data){ await updateDoc(doc(db,"ads",id), {...data, updatedAt:serverTimestamp()}); }
-export async function toggleAd(id,active){ await updateDoc(doc(db,"ads",id), {active, updatedAt:serverTimestamp()}); }
-export async function deleteAd(id)     { await deleteDoc(doc(db,"ads",id)); }
+  // Validation
+  if (!fromIata) { toast("Veuillez choisir une ville de départ.", "error"); return; }
+  if (!toIata)   { toast("Veuillez choisir une destination.", "error"); return; }
+  if (fromIata === toIata) { toast("Le départ et l'arrivée doivent être différents.", "error"); return; }
 
-// ─────────────────────────────────────────
-//  ADMIN — USERS
-// ─────────────────────────────────────────
-export async function getAllUsers() {
-  const snap = await getDocs(collection(db,"users"));
-  return snap.docs.map(d=>({id:d.id,...d.data()}));
-}
-export async function promoteToAdmin(uid){ await updateDoc(doc(db,"users",uid), {role:"admin"}); }
-export async function demoteToUser(uid)  { await updateDoc(doc(db,"users",uid), {role:"user"}); }
+  state.searchParams = { fromIata, toIata, date, time };
 
-// ─────────────────────────────────────────
-//  REALTIME DB
-// ─────────────────────────────────────────
-export async function getLiveStats() {
-  const snap = await get(ref(rtdb,"stats"));
-  return snap.exists() ? snap.val() : {};
-}
-export async function incrementVisitors() {
-  const snap = await get(ref(rtdb,"stats/visitors"));
-  await set(ref(rtdb,"stats/visitors"), (snap.exists()?snap.val():0)+1);
-}
-export async function sendSupportMessage(name,email,message) {
-  await push(ref(rtdb,"support"), { name, email, message, timestamp:Date.now(), read:false });
-}
-export async function getSupportMessages() {
-  const snap = await get(ref(rtdb,"support"));
-  if (!snap.exists()) return [];
-  const obj = snap.val();
-  return Object.entries(obj).map(([id,v])=>({id,...v})).sort((a,b)=>b.timestamp-a.timestamp);
+  setLoading(true);
+
+  try {
+    // Tente d'abord via Firebase (searchFlights depuis app.js)
+    let flights = [];
+    if (typeof window.searchFlights === "function") {
+      flights = await window.searchFlights({ fromIata, toIata, date });
+    } else {
+      // Fallback local
+      await new Promise(r => setTimeout(r, 600)); // simule un délai réseau
+      flights = LOCAL_FLIGHTS.filter(f => {
+        if (f.from.iata !== fromIata || f.to.iata !== toIata) return false;
+        if (f.status === "cancelled") return false;
+        if (date && f.departureDate !== date) return false;
+        return true;
+      });
+    }
+
+    // Filtre par heure
+    if (time) {
+      flights = flights.filter(f => matchesTimeSlot(f.departureTime, time));
+    }
+
+    state.availableFlights = flights;
+    renderFlightResults(flights, toIata);
+    goToStep("section-results");
+  } catch (err) {
+    console.error("Erreur recherche de vols :", err);
+    toast("Erreur lors de la recherche. Réessayez.", "error");
+  } finally {
+    setLoading(false);
+  }
 }
 
-export { firebaseApp, auth, db, rtdb, analytics };
+// ─────────────────────────────────────────────────────────────
+//  AFFICHAGE DES RÉSULTATS
+// ─────────────────────────────────────────────────────────────
+function renderFlightResults(flights, toIata) {
+  const list     = document.getElementById("flights-list");
+  const title    = document.getElementById("results-title");
+  const subtitle = document.getElementById("results-subtitle");
+
+  const dest = LOCAL_DESTINATIONS.find(d => d.iata === toIata);
+  title.textContent    = `Vols vers ${dest ? dest.name : toIata}`;
+  subtitle.textContent = flights.length
+    ? `${flights.length} vol${flights.length > 1 ? "s" : ""} trouvé${flights.length > 1 ? "s" : ""}`
+    : "Aucun vol disponible pour ce trajet";
+
+  if (flights.length === 0) {
+    list.innerHTML = `
+      <div class="no-results">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/>
+        </svg>
+        <h3>Aucun vol disponible</h3>
+        <p>Essayez avec d'autres dates ou une autre destination.</p>
+      </div>`;
+    return;
+  }
+
+  list.innerHTML = flights.map(f => buildFlightCard(f)).join("");
+}
+
+function buildFlightCard(f) {
+  const badgeClass  = f.status === "full" ? "full" : f.status === "cancelled" ? "cancelled" : "";
+  const badgeText   = f.status === "full" ? "Complet" : f.status === "cancelled" ? "Annulé" : "Disponible";
+  const clickable   = f.status === "active" ? `onclick="selectFlight('${f.id}')" style="cursor:pointer;"` : `style="opacity:.6;cursor:not-allowed;"`;
+
+  return `
+    <div class="flight-card" ${clickable}>
+      <div class="flight-header">
+        <span class="flight-number">${f.flightNumber} · ${f.aircraft}</span>
+        <span class="flight-badge ${badgeClass}">${badgeText}</span>
+      </div>
+      <div class="flight-route">
+        <div>
+          <div class="route-time">${f.departureTime}</div>
+          <div class="route-city">${f.from.iata}</div>
+          <div class="route-iata">${f.from.city}</div>
+        </div>
+        <div class="route-mid">
+          <div class="route-line">
+            <div class="route-dash"></div>
+            <span class="route-plane-icon">✈</span>
+            <div class="route-dash"></div>
+          </div>
+          <div class="route-duration">${formatDuration(f.durationMin)}</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="route-time">${f.arrivalTime}</div>
+          <div class="route-city">${f.to.iata}</div>
+          <div class="route-iata">${f.to.city}</div>
+        </div>
+      </div>
+      <div class="flight-footer">
+        <div class="flight-meta">
+          <span>📅 ${formatDate(f.departureDate)}</span>
+          <span>💺 ${f.seatsAvailable > 0 ? `${f.seatsAvailable} places restantes` : "Aucune place"}</span>
+        </div>
+        <div>
+          <div class="flight-price">${formatPrice(f.price)}<br><small>par passager</small></div>
+        </div>
+      </div>
+    </div>`;
+}
+
+/** Sélectionne un vol et passe à l'étape siège */
+function selectFlight(flightId) {
+  const flight = state.availableFlights.find(f => f.id === flightId);
+  if (!flight) return;
+  if (flight.status !== "active") {
+    toast("Ce vol n'est pas disponible.", "error");
+    return;
+  }
+  state.selectedFlight = flight;
+  state.selectedSeat   = null;
+
+  renderSeatSection(flight);
+  goToStep("section-seat");
+}
+window.selectFlight = selectFlight;
+
+// ─────────────────────────────────────────────────────────────
+//  SECTION SIÈGE
+// ─────────────────────────────────────────────────────────────
+const ROWS  = 10;
+const COLS  = ["A","B","C","D","E","F"]; // 3+3 avec allée au milieu
+
+/** Génère aléatoirement des sièges occupés (30–40% de rempli) */
+function generateTakenSeats(seed) {
+  const taken = [];
+  // Utilise le flightId comme graine pour avoir des sièges cohérents
+  let rng = seed.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
+  function rand() { rng = (rng * 1664525 + 1013904223) & 0xffffffff; return Math.abs(rng) / 0xffffffff; }
+
+  for (let r = 1; r <= ROWS; r++) {
+    for (const c of COLS) {
+      if (rand() < 0.35) taken.push(`${r}${c}`);
+    }
+  }
+  return taken;
+}
+
+function renderSeatSection(flight) {
+  // Résumé du vol
+  document.getElementById("seat-flight-summary").innerHTML = buildSummaryHTML(flight);
+  document.getElementById("selected-seat-info").style.display = "none";
+  document.getElementById("selected-seat-badge").textContent = "—";
+
+  // Bouton désactivé jusqu'à sélection
+  const btn = document.getElementById("proceed-to-payment");
+  btn.disabled = true;
+  btn.style.opacity = ".5";
+  btn.style.cursor  = "not-allowed";
+
+  // Génère les sièges occupés
+  state.takenSeats = generateTakenSeats(flight.id);
+
+  // Construit la grille
+  const container = document.getElementById("seat-map");
+  container.innerHTML = "";
+
+  for (let r = 1; r <= ROWS; r++) {
+    const row = document.createElement("div");
+    row.className = "seat-row";
+
+    // Numéro de rangée
+    const numEl = document.createElement("div");
+    numEl.className = "row-num";
+    numEl.textContent = r;
+    row.appendChild(numEl);
+
+    // 6 sièges (A B C | allée | D E F)
+    COLS.forEach((col, i) => {
+      // Allée entre C et D
+      if (i === 3) {
+        const aisle = document.createElement("div");
+        aisle.className = "aisle";
+        row.appendChild(aisle);
+      }
+
+      const seatId   = `${r}${col}`;
+      const isTaken  = state.takenSeats.includes(seatId);
+      const seatEl   = document.createElement("div");
+      seatEl.className = "seat" + (isTaken ? " taken" : "");
+      seatEl.id        = `seat-${seatId}`;
+      seatEl.textContent = col;
+      seatEl.title       = isTaken ? "Occupé" : `Siège ${seatId}`;
+
+      if (!isTaken) {
+        seatEl.addEventListener("click", () => handleSeatClick(seatId));
+      }
+
+      row.appendChild(seatEl);
+    });
+
+    container.appendChild(row);
+  }
+}
+
+function handleSeatClick(seatId) {
+  // Désélectionne l'ancien
+  if (state.selectedSeat) {
+    const old = document.getElementById(`seat-${state.selectedSeat}`);
+    if (old) old.classList.remove("selected");
+  }
+
+  // Si on reclique le même → désélection
+  if (state.selectedSeat === seatId) {
+    state.selectedSeat = null;
+    document.getElementById("selected-seat-info").style.display = "none";
+    const btn = document.getElementById("proceed-to-payment");
+    btn.disabled = true;
+    btn.style.opacity = ".5";
+    btn.style.cursor  = "not-allowed";
+    return;
+  }
+
+  // Sélectionne le nouveau
+  state.selectedSeat = seatId;
+  const el = document.getElementById(`seat-${seatId}`);
+  if (el) el.classList.add("selected");
+
+  // Met à jour l'info
+  document.getElementById("selected-seat-info").style.display  = "flex";
+  document.getElementById("selected-seat-badge").textContent = `Rangée ${seatId.slice(0,-1)} — Siège ${seatId.slice(-1)}`;
+
+  // Active le bouton
+  const btn = document.getElementById("proceed-to-payment");
+  btn.disabled = false;
+  btn.style.opacity = "1";
+  btn.style.cursor  = "pointer";
+
+  toast(`Siège ${seatId} sélectionné ✓`, "success");
+}
+
+// ─────────────────────────────────────────────────────────────
+//  SECTION PAIEMENT
+// ─────────────────────────────────────────────────────────────
+function renderPaymentSection(flight) {
+  // Résumé vol
+  document.getElementById("payment-flight-summary").innerHTML = buildSummaryHTML(flight, state.selectedSeat);
+
+  // Prix (toujours 0 Robux, mais on affiche le vrai prix barré)
+  const taxes = (flight.price * 0.12).toFixed(2);
+  document.getElementById("price-breakdown").innerHTML = `
+    <div class="price-row">
+      <span>Billet (1 passager)</span>
+      <span>${formatPrice(flight.price)}</span>
+    </div>
+    <div class="price-row">
+      <span>Taxes & frais</span>
+      <span>${parseFloat(taxes).toFixed(2).replace(".",",")} €</span>
+    </div>
+    <div class="price-row">
+      <span>Siège ${state.selectedSeat}</span>
+      <span>Inclus</span>
+    </div>
+    <div class="price-row total">
+      <span>Total</span>
+      <span class="amount">0 Robux</span>
+    </div>`;
+
+  document.getElementById("pay-btn").textContent = `🔒 Payer maintenant — 0 Robux`;
+}
+
+// ─────────────────────────────────────────────────────────────
+//  CONFIRMATION
+// ─────────────────────────────────────────────────────────────
+function renderConfirmation(bookingId) {
+  const f = state.selectedFlight;
+
+  document.getElementById("ticket-top").innerHTML = `
+    <div class="ticket-route">
+      ${f.from.iata}
+      <span style="color:var(--accent);">→</span>
+      ${f.to.iata}
+    </div>
+    <p style="color:var(--mist);font-size:.85rem;margin-bottom:1rem;">${f.from.city} → ${f.to.city}</p>
+    <div class="ticket-grid">
+      <div class="ticket-field">
+        <span class="ticket-field-label">Date</span>
+        <span class="ticket-field-value">${formatDate(f.departureDate)}</span>
+      </div>
+      <div class="ticket-field">
+        <span class="ticket-field-label">Départ</span>
+        <span class="ticket-field-value">${f.departureTime}</span>
+      </div>
+      <div class="ticket-field">
+        <span class="ticket-field-label">Arrivée</span>
+        <span class="ticket-field-value">${f.arrivalTime}</span>
+      </div>
+      <div class="ticket-field">
+        <span class="ticket-field-label">Durée</span>
+        <span class="ticket-field-value">${formatDuration(f.durationMin)}</span>
+      </div>
+    </div>`;
+
+  document.getElementById("ticket-bottom").innerHTML = `
+    <div class="ticket-grid">
+      <div class="ticket-field">
+        <span class="ticket-field-label">N° Vol</span>
+        <span class="ticket-field-value">${f.flightNumber}</span>
+      </div>
+      <div class="ticket-field">
+        <span class="ticket-field-label">Siège</span>
+        <span class="ticket-field-value">${state.selectedSeat}</span>
+      </div>
+      <div class="ticket-field">
+        <span class="ticket-field-label">Réservation</span>
+        <span class="ticket-field-value" style="font-size:.8rem;">${String(bookingId).slice(-8).toUpperCase()}</span>
+      </div>
+      <div class="ticket-field">
+        <span class="ticket-field-label">Appareil</span>
+        <span class="ticket-field-value" style="font-size:.8rem;">${f.aircraft}</span>
+      </div>
+    </div>`;
+
+  // Barcode décoratif
+  const barcode = document.getElementById("barcode");
+  barcode.innerHTML = Array.from({length:60}, (_,i) =>
+    `<div class="barcode-bar" style="width:${Math.random()>0.3?2:1}px;height:${24+Math.random()*16}px;"></div>`
+  ).join("");
+}
+
+// ─────────────────────────────────────────────────────────────
+//  BUILDER HTML COMMUN : résumé du vol
+// ─────────────────────────────────────────────────────────────
+function buildSummaryHTML(flight, seat) {
+  return `
+    <div class="summary-route-row">
+      <div>
+        <div style="font-size:.72rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:.2rem;">Départ</div>
+        <div class="summary-iata">${flight.from.iata}</div>
+        <div style="opacity:.7;font-size:.85rem;">${flight.from.city}</div>
+      </div>
+      <div class="summary-arrow">✈</div>
+      <div>
+        <div style="font-size:.72rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:.2rem;">Arrivée</div>
+        <div class="summary-iata">${flight.to.iata}</div>
+        <div style="opacity:.7;font-size:.85rem;">${flight.to.city}</div>
+      </div>
+    </div>
+    <div class="summary-details-grid">
+      <div>
+        <div class="summary-label">Date</div>
+        <div class="summary-value">${formatDate(flight.departureDate)}</div>
+      </div>
+      <div>
+        <div class="summary-label">Départ</div>
+        <div class="summary-value">${flight.departureTime}</div>
+      </div>
+      <div>
+        <div class="summary-label">Arrivée</div>
+        <div class="summary-value">${flight.arrivalTime}</div>
+      </div>
+      <div>
+        <div class="summary-label">Durée</div>
+        <div class="summary-value">${formatDuration(flight.durationMin)}</div>
+      </div>
+      ${seat ? `<div><div class="summary-label">Siège</div><div class="summary-value">${seat}</div></div>` : ""}
+      <div>
+        <div class="summary-label">N° Vol</div>
+        <div class="summary-value">${flight.flightNumber}</div>
+      </div>
+    </div>`;
+}
+
+// ─────────────────────────────────────────────────────────────
+//  PAIEMENT — PROCESSUS
+// ─────────────────────────────────────────────────────────────
+async function handlePayment() {
+  if (!state.selectedFlight || !state.selectedSeat) {
+    toast("Données manquantes.", "error");
+    return;
+  }
+
+  setLoading(true);
+
+  // Prépare les données de réservation
+  const reservationData = {
+    flightId:      state.selectedFlight.id,
+    flightNumber:  state.selectedFlight.flightNumber,
+    from:          state.selectedFlight.from,
+    to:            state.selectedFlight.to,
+    departureDate: state.selectedFlight.departureDate,
+    departureTime: state.selectedFlight.departureTime,
+    arrivalTime:   state.selectedFlight.arrivalTime,
+    durationMin:   state.selectedFlight.durationMin,
+    aircraft:      state.selectedFlight.aircraft,
+    seat:          state.selectedSeat,
+    price:         state.selectedFlight.price,
+    totalPrice:    0, // 0 Robux !
+    timestamp:     Date.now(),
+  };
+
+  try {
+    // Appel Firebase (ou stub)
+    const [payResult, saveResult] = await Promise.all([
+      App.processPayment(0),
+      App.saveReservation(reservationData),
+    ]);
+
+    state.bookingResult = saveResult;
+    const bookingId = saveResult?.bookingId || "PELO-" + Date.now();
+
+    renderConfirmation(bookingId);
+    goToStep("section-confirmation");
+    toast("Réservation confirmée ! 🎉", "success");
+  } catch (err) {
+    console.error("Erreur paiement :", err);
+    toast("Erreur lors du paiement. Réessayez.", "error");
+  } finally {
+    setLoading(false);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+//  INIT — ÉVÉNEMENTS
+// ─────────────────────────────────────────────────────────────
+document.addEventListener("DOMContentLoaded", () => {
+
+  // ── Date min = aujourd'hui
+  const dateInput = document.getElementById("travel-date");
+  if (dateInput) {
+    const today = new Date().toISOString().split("T")[0];
+    dateInput.min   = today;
+    dateInput.value = "2026-06-10"; // pré-rempli sur une date avec des vols
+  }
+
+  // ── Destinations populaires
+  renderPopularDestinations(LOCAL_DESTINATIONS);
+
+  // ── Bouton recherche
+  document.getElementById("search-btn")?.addEventListener("click", searchFlights);
+
+  // ── Swap villes (Bordeaux est toujours le départ dans cette version)
+  document.getElementById("swap-btn")?.addEventListener("click", () => {
+    toast("Tous les vols partent de Bordeaux-Mérignac.", "default");
+  });
+
+  // ── Navigation retour
+  document.getElementById("back-to-search")?.addEventListener("click", () => goToStep("section-search"));
+  document.getElementById("back-to-results")?.addEventListener("click", () => goToStep("section-results"));
+  document.getElementById("back-to-seat")?.addEventListener("click",    () => goToStep("section-seat"));
+
+  // ── Vers paiement
+  document.getElementById("proceed-to-payment")?.addEventListener("click", () => {
+    if (!state.selectedSeat) { toast("Veuillez choisir un siège.", "error"); return; }
+    renderPaymentSection(state.selectedFlight);
+    goToStep("section-payment");
+  });
+
+  // ── Payer
+  document.getElementById("pay-btn")?.addEventListener("click", handlePayment);
+
+  // ── Init step visuel
+  goToStep("section-search");
+});
+
+// ─────────────────────────────────────────────────────────────
+//  EXPOSE LES FONCTIONS UTILES POUR app.js ET POUR LE HTML
+// ─────────────────────────────────────────────────────────────
+window.PeloUI = {
+  goToStep,
+  toast,
+  setLoading,
+  getState: () => state,
+  formatDate,
+  formatPrice,
+  formatDuration,
+};
