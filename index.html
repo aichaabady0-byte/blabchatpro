@@ -1,420 +1,1468 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pelo Airways — Vols pas chers en Europe</title>
-<link rel="stylesheet" href="shared.css">
-<style>
-/* ── SEARCH HERO ── */
-.search-hero { background:var(--blue); padding:0 2rem 1.8rem; }
-.search-hero .verified { display:flex; align-items:center; gap:6px; color:rgba(255,255,255,.8); font-size:.78rem; padding:.8rem 0 0; justify-content:flex-end; }
-.search-hero .verified svg { width:18px; height:18px; color:var(--gold); }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pelo Airways — Réservez votre vol</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
 
-/* tabs */
-.s-tabs { display:flex; border-bottom:2px solid rgba(255,255,255,.15); margin-bottom:1.2rem; }
-.s-tab { display:flex; align-items:center; gap:7px; color:rgba(255,255,255,.72); font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:.88rem; letter-spacing:.5px; text-transform:uppercase; padding:13px 20px 11px; border-bottom:3px solid transparent; margin-bottom:-2px; cursor:default; }
-.s-tab svg { width:15px; height:15px; }
-.s-tab.active { color:#fff; border-bottom-color:var(--gold); }
-.s-tab .new { background:var(--gold); color:var(--text); font-size:.58rem; font-weight:900; padding:2px 5px; border-radius:3px; letter-spacing:.5px; }
+  <style>
+    /* ═══════════════════════════════════
+       VARIABLES & RESET
+    ═══════════════════════════════════ */
+    :root {
+      --ink:      #0d0d0f;
+      --paper:    #f5f3ee;
+      --cream:    #ede9e0;
+      --accent:   #c8402a;
+      --accent2:  #e8763a;
+      --sky:      #1a3a5c;
+      --mist:     #8e99aa;
+      --seat-free:    #d9e8f5;
+      --seat-taken:   #ccc;
+      --seat-sel:     #c8402a;
+      --seat-border:  #a0b8cc;
+      --radius:   14px;
+      --shadow:   0 8px 40px rgba(13,13,15,.10);
+      --trans:    .25s cubic-bezier(.4,0,.2,1);
+    }
 
-/* trip types */
-.trip-types { display:flex; align-items:center; gap:1.5rem; flex-wrap:wrap; margin-bottom:1.2rem; }
-.trip-type { display:flex; align-items:center; gap:7px; color:#fff; font-size:.88rem; font-weight:500; cursor:default; }
-.radio-outer { width:16px; height:16px; border-radius:50%; border:2px solid rgba(255,255,255,.55); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-.radio-outer.on { background:#fff; border-color:#fff; }
-.radio-outer.on::after { content:''; width:6px; height:6px; border-radius:50%; background:var(--blue); }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-/* search bar */
-.s-bar { display:flex; background:#fff; border-radius:7px; overflow:hidden; height:56px; max-width:1000px; box-shadow:0 4px 20px rgba(0,0,0,.15); }
-.s-field { flex:1; padding:5px 16px; display:flex; flex-direction:column; justify-content:center; border-right:1px solid var(--gray-light); }
-.s-field label { font-size:.68rem; font-weight:600; color:var(--gray); text-transform:uppercase; letter-spacing:.4px; }
-.s-field input { border:none; outline:none; font-family:'Barlow',sans-serif; font-size:1rem; font-weight:600; color:var(--text); background:transparent; }
-.s-swap { display:flex; align-items:center; justify-content:center; width:44px; flex-shrink:0; border-right:1px solid var(--gray-light); color:var(--gray); }
-.s-swap svg { width:18px; height:18px; }
-.s-date { width:160px; padding:5px 14px; display:flex; flex-direction:column; justify-content:center; border-right:1px solid var(--gray-light); }
-.s-date label { font-size:.68rem; font-weight:600; color:var(--gray); text-transform:uppercase; letter-spacing:.4px; }
-.s-date input { border:none; outline:none; font-family:'Barlow',sans-serif; font-size:.95rem; font-weight:600; color:var(--text); background:transparent; }
-.s-btn { background:var(--gold); border:none; color:var(--text); font-family:'Barlow Condensed',sans-serif; font-size:1.1rem; font-weight:900; padding:0 2.5rem; letter-spacing:1px; text-transform:uppercase; cursor:pointer; transition:background .2s; flex-shrink:0; }
-.s-btn:hover { background:var(--gold-dark); }
+    html { scroll-behavior: smooth; }
 
-/* filters */
-.s-filters { display:flex; align-items:center; gap:10px; margin-top:1rem; flex-wrap:wrap; }
-.s-filter-label { display:flex; align-items:center; gap:6px; color:rgba(255,255,255,.75); font-size:.83rem; }
-.s-filter-label svg { width:14px; height:14px; }
-.s-filter-btn { background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.25); color:#fff; padding:5px 12px; border-radius:4px; font-size:.82rem; font-weight:500; display:flex; align-items:center; gap:5px; cursor:default; }
-.s-filter-btn svg { width:11px; height:11px; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--paper);
+      color: var(--ink);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
 
-/* ── HERO BANNER ── */
-.hero-banner { background:linear-gradient(135deg,#0e2566 0%,#1a3fa3 55%,#1a5276 100%); border-radius:12px; overflow:hidden; position:relative; min-height:280px; display:flex; align-items:center; padding:2.5rem 3rem; }
-.hero-deco { position:absolute; right:0; top:0; bottom:0; width:45%; display:flex; align-items:center; justify-content:center; }
-.hero-plane-bg { opacity:.09; }
-.hero-plane-bg svg { width:320px; height:320px; }
-.hero-badge-eyebrow { font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:.9rem; letter-spacing:2px; text-transform:uppercase; color:var(--gold); display:flex; align-items:center; gap:8px; margin-bottom:.5rem; }
-.hero-badge-eyebrow svg { width:15px; height:15px; }
-.hero-title { font-family:'Barlow Condensed',sans-serif; font-size:3rem; font-weight:900; color:#fff; text-transform:uppercase; line-height:1; margin-bottom:.6rem; }
-.hero-price { display:inline-block; background:var(--red); color:#fff; font-family:'Barlow Condensed',sans-serif; font-size:2.5rem; font-weight:900; padding:6px 22px; border-radius:5px; margin-bottom:1.2rem; text-transform:uppercase; }
-.hero-actions { display:flex; align-items:center; gap:1.5rem; flex-wrap:wrap; }
-.hero-fine { font-size:.78rem; color:rgba(255,255,255,.6); line-height:1.5; }
+    h1,h2,h3,h4 { font-family: 'Syne', sans-serif; }
 
-/* ── DESTINATION CARDS ── */
-.dest-card { border-radius:12px; overflow:hidden; box-shadow:var(--shadow); position:relative; cursor:default; transition:transform .22s, box-shadow .22s; }
-.dest-card:hover { transform:translateY(-5px); box-shadow:var(--shadow-lg); }
-.dest-img { width:100%; height:160px; object-fit:cover; display:block; background:linear-gradient(135deg,var(--blue),var(--blue-light)); }
-.dest-img-placeholder { width:100%; height:160px; background:linear-gradient(135deg,var(--blue),var(--blue-light)); display:flex; align-items:center; justify-content:center; }
-.dest-img-placeholder svg { width:48px; height:48px; color:rgba(255,255,255,.3); }
-.dest-body { padding:1rem; background:#fff; }
-.dest-iata { font-family:'Barlow Condensed',sans-serif; font-size:.75rem; font-weight:800; letter-spacing:1px; color:var(--gold); margin-bottom:2px; }
-.dest-name { font-family:'Barlow Condensed',sans-serif; font-size:1.2rem; font-weight:800; color:var(--text); }
-.dest-country { font-size:.8rem; color:var(--text-light); margin-bottom:.7rem; }
-.dest-from { font-size:.8rem; color:var(--text-light); }
-.dest-from strong { color:var(--blue); font-size:1.1rem; font-family:'Barlow Condensed',sans-serif; font-weight:800; }
+    /* ═══════════════════════════════════
+       HEADER / NAV
+    ═══════════════════════════════════ */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(245,243,238,.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(13,13,15,.08);
+      padding: 0 clamp(1rem,4vw,2.5rem);
+    }
 
-/* ── PROMO BANNER ── */
-.promo-strip { background:var(--gold); border-radius:12px; display:flex; overflow:hidden; min-height:150px; }
-.promo-label { writing-mode:vertical-rl; transform:rotate(180deg); background:var(--blue); color:#fff; font-family:'Barlow Condensed',sans-serif; font-weight:800; font-size:.8rem; letter-spacing:2px; text-transform:uppercase; padding:16px 10px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-.promo-body { flex:1; display:flex; align-items:center; gap:1.5rem; padding:1.5rem 2rem; }
-.promo-icon { width:80px; height:80px; background:var(--blue); border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-.promo-icon svg { width:44px; height:44px; color:var(--gold); }
-.promo-text { flex:1; }
-.promo-h { font-family:'Barlow Condensed',sans-serif; font-size:1.8rem; font-weight:900; color:var(--blue-dark); text-transform:uppercase; line-height:1.1; }
-.promo-sub { display:inline-block; background:var(--blue-dark); color:#fff; font-family:'Barlow Condensed',sans-serif; font-weight:800; font-size:1.3rem; padding:2px 10px; border-radius:3px; margin:.3rem 0; }
-.promo-desc { font-size:.84rem; color:var(--blue-dark); margin-top:.3rem; }
-.promo-tabs { display:flex; flex-direction:column; flex-shrink:0; }
-.p-tab { writing-mode:vertical-rl; transform:rotate(180deg); font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:.72rem; letter-spacing:1px; text-transform:uppercase; padding:14px 8px; flex:1; display:flex; align-items:center; justify-content:center; color:#fff; cursor:default; }
-.p-tab:nth-child(1){ background:#16a34a; }
-.p-tab:nth-child(2){ background:#2563eb; }
-.p-tab:nth-child(3){ background:var(--red); }
-.p-tab:nth-child(4){ background:#1e3a8a; }
+    .nav-inner {
+      max-width: 1200px;
+      margin: auto;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
 
-/* email sidebar */
-.email-float { position:fixed; bottom:30px; right:0; background:var(--blue-dark); color:#fff; padding:18px 20px; width:270px; border-radius:10px 0 0 10px; box-shadow:var(--shadow-lg); z-index:100; }
-.email-float-title { font-family:'Barlow Condensed',sans-serif; font-size:1rem; font-weight:800; text-transform:uppercase; color:var(--gold); margin-bottom:6px; }
-.email-float-text { font-size:.73rem; line-height:1.4; color:rgba(255,255,255,.78); margin-bottom:10px; }
-.email-float input { width:100%; padding:8px 12px; border:1px solid rgba(255,255,255,.25); border-radius:4px; background:rgba(255,255,255,.1); color:#fff; font-size:.82rem; margin-bottom:8px; outline:none; }
-.email-float input::placeholder { color:rgba(255,255,255,.4); }
-.email-tab { position:fixed; bottom:220px; right:0; background:var(--blue); padding:10px 7px; border-radius:6px 0 0 6px; z-index:101; cursor:pointer; }
-.email-tab svg { width:18px; height:18px; color:#fff; }
-#emailPanel { display:block; }
+    .logo {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.4rem;
+      letter-spacing: -.5px;
+      color: var(--ink);
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
+    .logo span { color: var(--accent); }
 
-/* flight ticker */
-.ticker-wrap { background:var(--blue-dark); padding:8px 2rem; overflow:hidden; }
-.ticker { display:flex; gap:2rem; animation:ticker 30s linear infinite; white-space:nowrap; }
-.ticker-item { display:flex; align-items:center; gap:8px; color:rgba(255,255,255,.85); font-size:.8rem; font-family:'Barlow Condensed',sans-serif; font-weight:600; letter-spacing:.5px; }
-.ticker-item svg { width:13px; height:13px; color:var(--gold); flex-shrink:0; }
-@keyframes ticker { from{transform:translateX(0)} to{transform:translateX(-50%)} }
-</style>
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      background: var(--accent);
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+    }
+    .logo-icon svg { width: 20px; height: 20px; fill: white; }
+
+    /* ═══════════════════════════════════
+       PROGRESS STEPPER
+    ═══════════════════════════════════ */
+    .stepper {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      font-family: 'Syne', sans-serif;
+      font-size: .78rem;
+      font-weight: 600;
+    }
+
+    .step {
+      display: flex;
+      align-items: center;
+      gap: .4rem;
+      color: var(--mist);
+      transition: color var(--trans);
+    }
+
+    .step.active { color: var(--accent); }
+    .step.done   { color: var(--sky); }
+
+    .step-num {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      border: 2px solid currentColor;
+      display: grid;
+      place-items: center;
+      font-size: .72rem;
+      transition: background var(--trans), color var(--trans);
+    }
+
+    .step.active .step-num,
+    .step.done   .step-num {
+      background: currentColor;
+      color: #fff;
+    }
+
+    .step-done-check { display: none; }
+    .step.done .step-done-check { display: inline; }
+    .step.done .step-num-text   { display: none; }
+
+    .step-line {
+      width: 32px;
+      height: 2px;
+      background: var(--cream);
+      margin: 0 4px;
+    }
+
+    @media (max-width: 600px) {
+      .step-label { display: none; }
+      .step-line  { width: 16px; }
+    }
+
+    /* ═══════════════════════════════════
+       SECTIONS
+    ═══════════════════════════════════ */
+    .section {
+      display: none;
+      animation: fadeUp .45s ease both;
+    }
+    .section.active { display: block; }
+
+    @keyframes fadeUp {
+      from { opacity:0; transform: translateY(24px); }
+      to   { opacity:1; transform: translateY(0); }
+    }
+
+    /* ═══════════════════════════════════
+       HERO — SEARCH
+    ═══════════════════════════════════ */
+    #section-search {
+      min-height: calc(100vh - 64px);
+      display: none;
+      flex-direction: column;
+    }
+    #section-search.active { display: flex; }
+
+    .hero-bg {
+      position: relative;
+      background: linear-gradient(135deg, var(--sky) 0%, #0d2340 100%);
+      padding: clamp(3rem,8vw,6rem) clamp(1rem,4vw,2.5rem) clamp(2rem,5vw,4rem);
+      overflow: hidden;
+    }
+
+    .hero-bg::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 60% 50% at 80% 30%, rgba(200,64,42,.25) 0%, transparent 70%),
+        radial-gradient(ellipse 40% 60% at 10% 80%, rgba(26,58,92,.6) 0%, transparent 70%);
+    }
+
+    .hero-grid-overlay {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+      background-size: 48px 48px;
+    }
+
+    .hero-content {
+      position: relative;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .hero-eyebrow {
+      font-family: 'Syne', sans-serif;
+      font-size: .75rem;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--accent2);
+      margin-bottom: 1rem;
+    }
+
+    .hero-title {
+      font-size: clamp(2.2rem, 5vw, 4rem);
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.1;
+      margin-bottom: 1rem;
+    }
+
+    .hero-title em {
+      font-style: normal;
+      color: var(--accent2);
+    }
+
+    .hero-sub {
+      color: rgba(255,255,255,.6);
+      font-size: 1.05rem;
+      margin-bottom: 2.5rem;
+      max-width: 520px;
+    }
+
+    /* ═══════════════════════════════════
+       SEARCH CARD
+    ═══════════════════════════════════ */
+    .search-card {
+      background: #fff;
+      border-radius: 20px;
+      padding: clamp(1.5rem,4vw,2.5rem);
+      box-shadow: 0 20px 80px rgba(0,0,0,.25);
+      max-width: 860px;
+    }
+
+    .search-card-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--ink);
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
+
+    .search-grid {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    @media (max-width: 680px) {
+      .search-grid { grid-template-columns: 1fr; }
+      .swap-btn    { transform: rotate(90deg); }
+    }
+
+    .field-group {
+      display: flex;
+      flex-direction: column;
+      gap: .4rem;
+    }
+
+    .field-label {
+      font-size: .72rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--mist);
+    }
+
+    .field-input {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1rem;
+      font-weight: 500;
+      color: var(--ink);
+      background: var(--paper);
+      border: 2px solid transparent;
+      border-radius: var(--radius);
+      padding: .75rem 1rem;
+      outline: none;
+      transition: border-color var(--trans), background var(--trans);
+      width: 100%;
+      -webkit-appearance: none;
+    }
+
+    .field-input:focus {
+      border-color: var(--accent);
+      background: #fff;
+    }
+
+    .field-input option { font-weight: 400; }
+
+    .swap-btn {
+      align-self: flex-end;
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      border: 2px solid var(--cream);
+      background: #fff;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      transition: background var(--trans), border-color var(--trans), transform var(--trans);
+      flex-shrink: 0;
+    }
+
+    .swap-btn:hover {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+    .swap-btn:hover svg { stroke: #fff; }
+    .swap-btn svg { stroke: var(--mist); width: 18px; height: 18px; transition: stroke var(--trans); }
+
+    .date-time-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    @media (max-width: 480px) {
+      .date-time-row { grid-template-columns: 1fr; }
+    }
+
+    /* ═══════════════════════════════════
+       BUTTONS
+    ═══════════════════════════════════ */
+    .btn-primary {
+      font-family: 'Syne', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      color: #fff;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+      border: none;
+      border-radius: var(--radius);
+      padding: .9rem 2rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: .6rem;
+      transition: transform var(--trans), box-shadow var(--trans);
+      box-shadow: 0 4px 20px rgba(200,64,42,.35);
+      width: 100%;
+      justify-content: center;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(200,64,42,.5);
+    }
+
+    .btn-primary:active { transform: translateY(0); }
+
+    .btn-secondary {
+      font-family: 'Syne', sans-serif;
+      font-size: .9rem;
+      font-weight: 700;
+      color: var(--sky);
+      background: transparent;
+      border: 2px solid var(--sky);
+      border-radius: var(--radius);
+      padding: .75rem 1.5rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      transition: background var(--trans), color var(--trans);
+    }
+
+    .btn-secondary:hover {
+      background: var(--sky);
+      color: #fff;
+    }
+
+    /* ═══════════════════════════════════
+       POPULAR DESTINATIONS
+    ═══════════════════════════════════ */
+    .popular-section {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: clamp(2rem,5vw,4rem) clamp(1rem,4vw,2.5rem);
+    }
+
+    .section-heading {
+      font-size: 1.6rem;
+      font-weight: 800;
+      margin-bottom: .4rem;
+    }
+
+    .section-sub {
+      color: var(--mist);
+      margin-bottom: 2rem;
+      font-size: .95rem;
+    }
+
+    .dest-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 1rem;
+    }
+
+    .dest-card {
+      border-radius: 16px;
+      overflow: hidden;
+      cursor: pointer;
+      position: relative;
+      aspect-ratio: 3/4;
+      transition: transform var(--trans), box-shadow var(--trans);
+      background: var(--cream);
+    }
+
+    .dest-card:hover {
+      transform: translateY(-6px);
+      box-shadow: var(--shadow);
+    }
+
+    .dest-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform .6s ease;
+    }
+
+    .dest-card:hover img { transform: scale(1.06); }
+
+    .dest-card-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(10,20,35,.85) 0%, transparent 55%);
+    }
+
+    .dest-card-info {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 1.2rem;
+      color: #fff;
+    }
+
+    .dest-city {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 800;
+      line-height: 1.2;
+    }
+
+    .dest-country {
+      font-size: .8rem;
+      opacity: .75;
+      margin-bottom: .5rem;
+    }
+
+    .dest-price {
+      font-family: 'Syne', sans-serif;
+      font-size: .85rem;
+      font-weight: 700;
+      background: var(--accent);
+      display: inline-block;
+      padding: .2rem .6rem;
+      border-radius: 6px;
+    }
+
+    /* ═══════════════════════════════════
+       FLIGHT RESULTS — SECTION
+    ═══════════════════════════════════ */
+    .content-wrap {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: clamp(2rem,5vw,3rem) clamp(1rem,4vw,2.5rem);
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      font-size: .85rem;
+      font-weight: 600;
+      color: var(--mist);
+      cursor: pointer;
+      margin-bottom: 1.5rem;
+      transition: color var(--trans);
+    }
+    .back-link:hover { color: var(--ink); }
+
+    /* ═══════════════════════════════════
+       FLIGHT CARD
+    ═══════════════════════════════════ */
+    .flight-card {
+      background: #fff;
+      border-radius: 18px;
+      padding: 2rem;
+      box-shadow: var(--shadow);
+      margin-bottom: 1rem;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: border-color var(--trans), transform var(--trans), box-shadow var(--trans);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .flight-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 5px;
+      height: 100%;
+      background: linear-gradient(to bottom, var(--accent), var(--accent2));
+      border-radius: 5px 0 0 5px;
+    }
+
+    .flight-card:hover {
+      border-color: var(--accent);
+      transform: translateX(4px);
+      box-shadow: 0 12px 50px rgba(200,64,42,.15);
+    }
+
+    .flight-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+      gap: .5rem;
+    }
+
+    .flight-number {
+      font-family: 'Syne', sans-serif;
+      font-size: .8rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: var(--mist);
+    }
+
+    .flight-badge {
+      font-size: .72rem;
+      font-weight: 700;
+      padding: .25rem .7rem;
+      border-radius: 50px;
+      background: #eaf6ea;
+      color: #2a7a3a;
+    }
+
+    .flight-badge.full     { background: #fdeaea; color: #c0392b; }
+    .flight-badge.cancelled{ background: #f0f0f0; color: #666; }
+
+    .flight-route {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .route-city {
+      font-family: 'Syne', sans-serif;
+      font-size: 2rem;
+      font-weight: 800;
+      letter-spacing: -1px;
+      line-height: 1;
+    }
+
+    .route-iata {
+      font-size: .8rem;
+      font-weight: 500;
+      color: var(--mist);
+      margin-top: .2rem;
+    }
+
+    .route-time {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--sky);
+    }
+
+    .route-mid {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: .3rem;
+    }
+
+    .route-line {
+      display: flex;
+      align-items: center;
+      gap: .4rem;
+      width: 100%;
+    }
+
+    .route-dash {
+      flex: 1;
+      height: 1px;
+      border-top: 2px dashed var(--cream);
+    }
+
+    .route-plane-icon {
+      color: var(--accent);
+      font-size: 1.2rem;
+    }
+
+    .route-duration {
+      font-size: .78rem;
+      color: var(--mist);
+      font-weight: 500;
+    }
+
+    .flight-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 1rem;
+      border-top: 1px solid var(--cream);
+      flex-wrap: wrap;
+      gap: .5rem;
+    }
+
+    .flight-meta {
+      display: flex;
+      gap: 1.5rem;
+      font-size: .82rem;
+      color: var(--mist);
+      flex-wrap: wrap;
+    }
+
+    .flight-meta span { display: flex; align-items: center; gap: .3rem; }
+
+    .flight-price {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--accent);
+      line-height: 1;
+    }
+
+    .flight-price small {
+      font-size: .75rem;
+      color: var(--mist);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 400;
+    }
+
+    .no-results {
+      text-align: center;
+      padding: 4rem 2rem;
+      color: var(--mist);
+    }
+
+    .no-results svg {
+      width: 64px;
+      height: 64px;
+      margin-bottom: 1rem;
+      opacity: .4;
+    }
+
+    .no-results p { font-size: 1.1rem; margin-top: .5rem; }
+
+    /* ═══════════════════════════════════
+       FLIGHT SUMMARY (résumé du vol)
+    ═══════════════════════════════════ */
+    .summary-box {
+      background: linear-gradient(135deg, var(--sky) 0%, #0d2340 100%);
+      border-radius: 18px;
+      padding: 2rem;
+      color: #fff;
+      margin-bottom: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .summary-box::after {
+      content: '';
+      position: absolute;
+      right: -40px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 10rem;
+      opacity: .07;
+      font-family: 'Syne', sans-serif;
+      font-weight: 900;
+    }
+
+    .summary-label {
+      font-size: .72rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.5);
+      margin-bottom: .25rem;
+    }
+
+    .summary-value {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    .summary-route-row {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .summary-iata {
+      font-family: 'Syne', sans-serif;
+      font-size: 2.5rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .summary-arrow {
+      font-size: 1.5rem;
+      opacity: .4;
+    }
+
+    .summary-details-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 1rem;
+    }
+
+    /* ═══════════════════════════════════
+       SEAT MAP
+    ═══════════════════════════════════ */
+    .seat-legend {
+      display: flex;
+      gap: 1.5rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      font-size: .82rem;
+      color: var(--mist);
+      font-weight: 500;
+    }
+
+    .legend-dot {
+      width: 20px;
+      height: 20px;
+      border-radius: 6px;
+    }
+    .legend-dot.free   { background: var(--seat-free); border: 2px solid var(--seat-border); }
+    .legend-dot.taken  { background: var(--seat-taken); }
+    .legend-dot.sel    { background: var(--seat-sel); }
+
+    .aircraft-body {
+      background: #fff;
+      border-radius: 18px;
+      padding: 2rem 1.5rem;
+      box-shadow: var(--shadow);
+      margin-bottom: 1.5rem;
+    }
+
+    .aircraft-nose {
+      width: 80px;
+      height: 40px;
+      border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+      background: var(--cream);
+      margin: 0 auto 1.5rem;
+      border: 2px solid rgba(0,0,0,.07);
+    }
+
+    .seat-row-labels {
+      display: grid;
+      grid-template-columns: 30px repeat(3, 1fr) 30px repeat(3, 1fr);
+      gap: 6px;
+      margin-bottom: .5rem;
+    }
+
+    .col-label {
+      font-family: 'Syne', sans-serif;
+      font-size: .7rem;
+      font-weight: 700;
+      text-align: center;
+      color: var(--mist);
+      letter-spacing: 1px;
+    }
+
+    .col-label.spacer { background: transparent; }
+
+    .seat-rows-container { display: flex; flex-direction: column; gap: 6px; }
+
+    .seat-row {
+      display: grid;
+      grid-template-columns: 30px repeat(3, 1fr) 30px repeat(3, 1fr);
+      gap: 6px;
+      align-items: center;
+    }
+
+    .row-num {
+      font-size: .7rem;
+      font-weight: 700;
+      color: var(--mist);
+      text-align: center;
+      font-family: 'Syne', sans-serif;
+    }
+
+    .aisle { background: transparent; }
+
+    .seat {
+      aspect-ratio: 1;
+      border-radius: 8px;
+      border: 2px solid var(--seat-border);
+      background: var(--seat-free);
+      cursor: pointer;
+      transition: background var(--trans), border-color var(--trans), transform var(--trans);
+      display: grid;
+      place-items: center;
+      font-size: .65rem;
+      font-weight: 700;
+      color: var(--sky);
+      font-family: 'Syne', sans-serif;
+      min-height: 36px;
+    }
+
+    .seat:hover:not(.taken) {
+      background: #b8d8f0;
+      border-color: var(--sky);
+      transform: scale(1.1);
+    }
+
+    .seat.taken {
+      background: var(--seat-taken);
+      border-color: #bbb;
+      cursor: not-allowed;
+      color: #aaa;
+    }
+
+    .seat.selected {
+      background: var(--seat-sel);
+      border-color: var(--accent);
+      color: #fff;
+      transform: scale(1.1);
+      box-shadow: 0 4px 16px rgba(200,64,42,.4);
+    }
+
+    .selected-seat-info {
+      background: var(--paper);
+      border: 2px solid var(--accent);
+      border-radius: var(--radius);
+      padding: 1rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+      gap: .5rem;
+    }
+
+    .selected-seat-info p {
+      font-size: .9rem;
+      color: var(--mist);
+    }
+
+    .selected-seat-badge {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.1rem;
+      color: var(--accent);
+    }
+
+    /* ═══════════════════════════════════
+       PAYMENT
+    ═══════════════════════════════════ */
+    .payment-card {
+      background: #fff;
+      border-radius: 18px;
+      padding: 2rem;
+      box-shadow: var(--shadow);
+      margin-bottom: 1.5rem;
+    }
+
+    .payment-card h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 1.2rem;
+      color: var(--ink);
+    }
+
+    .price-breakdown {
+      display: flex;
+      flex-direction: column;
+      gap: .6rem;
+      margin-bottom: 1.2rem;
+    }
+
+    .price-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: .9rem;
+      color: var(--mist);
+    }
+
+    .price-row.total {
+      color: var(--ink);
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.3rem;
+      padding-top: .6rem;
+      border-top: 2px solid var(--cream);
+    }
+
+    .price-row.total .amount { color: var(--accent); }
+
+    .fake-card-fields {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    @media (max-width: 480px) {
+      .fake-card-fields { grid-template-columns: 1fr; }
+    }
+
+    .fake-card-full { grid-column: 1 / -1; }
+
+    .fake-input-wrap { display: flex; flex-direction: column; gap: .35rem; }
+
+    .fake-label {
+      font-size: .72rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--mist);
+    }
+
+    .fake-input {
+      font-family: 'DM Sans', sans-serif;
+      font-size: .95rem;
+      background: var(--paper);
+      border: 2px solid transparent;
+      border-radius: var(--radius);
+      padding: .7rem 1rem;
+      outline: none;
+      color: var(--mist);
+      cursor: default;
+      transition: border-color var(--trans);
+    }
+
+    .fake-input:focus { border-color: var(--accent); }
+
+    /* ═══════════════════════════════════
+       CONFIRMATION
+    ═══════════════════════════════════ */
+    #section-confirmation {
+      min-height: calc(100vh - 64px);
+    }
+
+    .confirmation-wrap {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: clamp(3rem,8vw,6rem) clamp(1rem,4vw,2.5rem);
+      text-align: center;
+    }
+
+    .checkmark-ring {
+      width: 96px;
+      height: 96px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #2a9d5a, #27ae60);
+      display: grid;
+      place-items: center;
+      margin: 0 auto 2rem;
+      animation: popIn .5s cubic-bezier(.34,1.56,.64,1) both;
+      box-shadow: 0 12px 40px rgba(39,174,96,.35);
+    }
+
+    @keyframes popIn {
+      from { transform: scale(0); opacity: 0; }
+      to   { transform: scale(1); opacity: 1; }
+    }
+
+    .checkmark-ring svg {
+      width: 48px;
+      height: 48px;
+      stroke: #fff;
+      stroke-width: 3;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      fill: none;
+      stroke-dasharray: 60;
+      stroke-dashoffset: 60;
+      animation: drawCheck .4s .4s ease forwards;
+    }
+
+    @keyframes drawCheck {
+      to { stroke-dashoffset: 0; }
+    }
+
+    .confirm-title {
+      font-size: 2rem;
+      font-weight: 800;
+      margin-bottom: .5rem;
+    }
+
+    .confirm-sub {
+      color: var(--mist);
+      margin-bottom: 2rem;
+      font-size: 1rem;
+      line-height: 1.6;
+    }
+
+    .confirm-ticket {
+      background: #fff;
+      border-radius: 18px;
+      padding: 2rem;
+      box-shadow: var(--shadow);
+      text-align: left;
+      margin-bottom: 2rem;
+      position: relative;
+    }
+
+    .ticket-tear {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 50%;
+      display: flex;
+      align-items: center;
+      gap: 0;
+    }
+
+    .ticket-dash-line {
+      flex: 1;
+      border-top: 2px dashed var(--cream);
+    }
+
+    .ticket-circle {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--paper);
+      flex-shrink: 0;
+    }
+
+    .ticket-circle.left  { margin-left: -12px; }
+    .ticket-circle.right { margin-right: -12px; }
+
+    .ticket-top { padding-bottom: 1.5rem; margin-bottom: 1.5rem; }
+    .ticket-bottom { padding-top: 1rem; }
+
+    .ticket-route {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .ticket-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: .8rem;
+    }
+
+    .ticket-field { display: flex; flex-direction: column; gap: .2rem; }
+
+    .ticket-field-label {
+      font-size: .68rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--mist);
+    }
+
+    .ticket-field-value {
+      font-family: 'Syne', sans-serif;
+      font-size: .95rem;
+      font-weight: 700;
+    }
+
+    .barcode {
+      display: flex;
+      gap: 2px;
+      justify-content: center;
+      margin-top: 1rem;
+    }
+
+    .barcode-bar {
+      background: var(--ink);
+      border-radius: 1px;
+    }
+
+    /* ═══════════════════════════════════
+       TOAST NOTIFICATIONS
+    ═══════════════════════════════════ */
+    #toast-container {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      z-index: 999;
+      display: flex;
+      flex-direction: column;
+      gap: .5rem;
+    }
+
+    .toast {
+      background: var(--ink);
+      color: #fff;
+      padding: .8rem 1.4rem;
+      border-radius: 12px;
+      font-size: .88rem;
+      font-weight: 500;
+      box-shadow: 0 8px 30px rgba(0,0,0,.2);
+      animation: toastIn .3s ease both;
+      max-width: 300px;
+    }
+
+    .toast.error { background: var(--accent); }
+    .toast.success { background: #27ae60; }
+
+    @keyframes toastIn {
+      from { transform: translateX(120%); opacity: 0; }
+      to   { transform: translateX(0); opacity: 1; }
+    }
+
+    /* ═══════════════════════════════════
+       LOADING
+    ═══════════════════════════════════ */
+    .loading-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(245,243,238,.9);
+      backdrop-filter: blur(6px);
+      z-index: 200;
+      display: grid;
+      place-items: center;
+      display: none;
+    }
+
+    .loading-overlay.visible { display: grid; }
+
+    .loader {
+      width: 48px;
+      height: 48px;
+      border: 4px solid var(--cream);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ═══════════════════════════════════
+       RESPONSIVE TWEAKS
+    ═══════════════════════════════════ */
+    @media (max-width: 480px) {
+      .flight-route { grid-template-columns: 1fr; text-align: center; }
+      .route-mid    { flex-direction: row; }
+      .route-city   { font-size: 1.5rem; }
+    }
+  </style>
 </head>
 <body>
 
-<!-- NAVBAR -->
-<nav class="navbar">
-  <a href="index.html" class="logo">
-    <svg class="logo-svg" viewBox="0 0 40 40" fill="none">
-      <path d="M4 26 L20 8 L36 18 L28 20 L20 14 L10 24 Z" fill="#f0a500"/>
-      <path d="M10 24 L20 14 L24 16 L16 26 Z" fill="rgba(255,255,255,0.25)"/>
-      <circle cx="20" cy="22" r="4" fill="white"/>
-      <circle cx="20" cy="22" r="2" fill="#f0a500"/>
-      <path d="M28 20 L36 28 L32 28 L26 22 Z" fill="#f0a500" opacity="0.7"/>
-    </svg>
-    <span class="logo-text">PELO <span>AIRWAYS</span></span>
-  </a>
-  <div class="nav-links">
-    <a href="search.html" class="nav-link">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      Rechercher
-    </a>
-    <a href="#" class="nav-link">FAQ</a>
-    <div class="nav-flag">
-      <svg width="20" height="14" viewBox="0 0 20 14"><rect width="6.66" height="14" fill="#002395"/><rect x="6.66" width="6.68" height="14" fill="#EEE"/><rect x="13.34" width="6.66" height="14" fill="#ED2939"/></svg>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="10" height="10"><polyline points="6 9 12 15 18 9"/></svg>
-    </div>
-    <div id="navGuest">
-      <a href="auth.html" class="btn-nav">Se connecter</a>
-    </div>
-    <div id="navUser" style="display:none;align-items:center;gap:10px;">
-      <div class="nav-user">
-        <div class="nav-avatar" id="navAvatar">?</div>
-        <span id="navName">Mon compte</span>
+<!-- ══════════════════════════════════
+     HEADER
+══════════════════════════════════ -->
+<header>
+  <div class="nav-inner">
+    <div class="logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/>
+        </svg>
       </div>
-      <a href="dashboard.html" class="btn-nav">Mes réservations</a>
-      <button class="btn-nav" id="btnLogout">Déconnexion</button>
+      Pelo <span>Airways</span>
     </div>
-    <div id="navAdmin" style="display:none;">
-      <a href="admin.html" class="btn-nav-gold">⚙ Admin</a>
-    </div>
-  </div>
-</nav>
 
-<!-- TICKER -->
-<div class="ticker-wrap">
-  <div class="ticker" id="ticker">
-    <div class="ticker-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg> PW101 BOD→BCN 07:30 — 29,99€</div>
-    <div class="ticker-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg> PW102 BOD→LIS 10:00 — 34,99€</div>
-    <div class="ticker-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg> PW203 BOD→FCO 14:20 — 49,99€</div>
-    <div class="ticker-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg> PW405 BOD→DUB 11:30 — 44,99€</div>
-    <div class="ticker-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg> PW607 BOD→PRG 16:10 — 24,99€</div>
-    <!-- repeat for infinite effect -->
-    <div class="ticker-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg> PW101 BOD→BCN 07:30 — 29,99€</div>
-    <div class="ticker-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg> PW102 BOD→LIS 10:00 — 34,99€</div>
-    <div class="ticker-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg> PW506 BOD→ATH 08:00 — 59,99€</div>
-    <div class="ticker-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg> PW808 BOD→MAD 13:00 — 19,99€</div>
+    <div class="stepper" id="stepper">
+      <div class="step active" id="step-1">
+        <div class="step-num">
+          <span class="step-num-text">1</span>
+          <span class="step-done-check">✓</span>
+        </div>
+        <span class="step-label">Recherche</span>
+      </div>
+      <div class="step-line"></div>
+      <div class="step" id="step-2">
+        <div class="step-num">
+          <span class="step-num-text">2</span>
+          <span class="step-done-check">✓</span>
+        </div>
+        <span class="step-label">Vol</span>
+      </div>
+      <div class="step-line"></div>
+      <div class="step" id="step-3">
+        <div class="step-num">
+          <span class="step-num-text">3</span>
+          <span class="step-done-check">✓</span>
+        </div>
+        <span class="step-label">Siège</span>
+      </div>
+      <div class="step-line"></div>
+      <div class="step" id="step-4">
+        <div class="step-num">
+          <span class="step-num-text">4</span>
+          <span class="step-done-check">✓</span>
+        </div>
+        <span class="step-label">Paiement</span>
+      </div>
+    </div>
   </div>
+</header>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loading-overlay">
+  <div class="loader"></div>
 </div>
 
-<!-- SEARCH SECTION -->
-<div class="search-hero">
-  <div class="verified">
-    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><polyline points="20 6 9 17 4 12"/></svg>
-    Vérifié par Pelo
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-  </div>
-  <div class="s-tabs">
-    <div class="s-tab active">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>
-      Vols
-    </div>
-    <div class="s-tab">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
-      Location de voiture
-    </div>
-    <div class="s-tab">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-      Hôtel
-    </div>
-    <div class="s-tab">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-      Cartes cadeaux <span class="new">NOUVEAU</span>
-    </div>
-  </div>
-  <div class="trip-types">
-    <label class="trip-type"><div class="radio-outer on"></div> Voyage retour</label>
-    <label class="trip-type"><div class="radio-outer"></div> Aller simple</label>
-    <label class="trip-type"><div class="radio-outer"></div> Villes multiples <span class="new">NOUVEAU</span></label>
-    <label class="trip-type">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-      Code promo
-    </label>
-  </div>
-  <div class="s-bar">
-    <div class="s-field">
-      <label>De</label>
-      <input type="text" id="inputFrom" placeholder="Bordeaux" value="Bordeaux">
-    </div>
-    <div class="s-swap">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
-    </div>
-    <div class="s-field">
-      <label>À</label>
-      <input type="text" id="inputTo" placeholder="Destination">
-    </div>
-    <div class="s-date">
-      <label>Départ</label>
-      <input type="date" id="inputDate">
-    </div>
-    <button class="s-btn" id="btnSearch">Recherche</button>
-  </div>
-  <div class="s-filters">
-    <span class="s-filter-label">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
-      Filtres :
-    </span>
-    <button class="s-filter-btn">Gamme de prix <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></button>
-    <button class="s-filter-btn">Heures <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></button>
-  </div>
-</div>
+<!-- Toast Container -->
+<div id="toast-container"></div>
 
-<!-- MAIN -->
-<main class="section">
+<!-- ══════════════════════════════════
+     SECTION 1 : RECHERCHE
+══════════════════════════════════ -->
+<section class="section active" id="section-search">
+  <div class="hero-bg">
+    <div class="hero-grid-overlay"></div>
+    <div class="hero-content">
+      <p class="hero-eyebrow">✈ Pelo Airways</p>
+      <h1 class="hero-title">Volez vers <em>l'Europe</em><br>pour presque rien</h1>
+      <p class="hero-sub">Des centaines de vols depuis Bordeaux-Mérignac. Réservez en 3 minutes.</p>
 
-  <!-- Hero banner (from DB) -->
-  <div class="hero-banner" id="heroBanner">
-    <div style="position:relative;z-index:2;">
-      <div class="hero-badge-eyebrow">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-        Offre limitée
-      </div>
-      <div class="hero-title" id="heroTitle">Les bons plans de l'été</div>
-      <div class="hero-price" id="heroPrice">À partir de 24,99 €</div>
-      <div class="hero-actions">
-        <a href="search.html" class="btn btn-primary btn-lg">Réservez dès maintenant</a>
-        <div class="hero-fine">Voyage 01/05/26 – 31/08/26.<br>Offre soumise à conditions.</div>
-      </div>
-    </div>
-    <div class="hero-deco">
-      <div class="hero-plane-bg">
-        <svg viewBox="0 0 200 200" fill="none"><path d="M20 130 L100 40 L180 90 L140 100 L100 70 L50 120 Z" fill="white"/><path d="M50 120 L100 70 L120 80 L80 130 Z" fill="rgba(240,165,0,.6)"/><path d="M140 100 L180 140 L160 140 L130 110 Z" fill="rgba(240,165,0,.4)"/><ellipse cx="85" cy="80" rx="4" ry="3" fill="rgba(240,165,0,.8)"/><ellipse cx="97" cy="74" rx="4" ry="3" fill="rgba(240,165,0,.8)"/><ellipse cx="109" cy="78" rx="4" ry="3" fill="rgba(240,165,0,.8)"/></svg>
+      <!-- Carte de recherche -->
+      <div class="search-card">
+        <p class="search-card-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          Trouver un vol
+        </p>
+
+        <div class="search-grid">
+          <div class="field-group">
+            <label class="field-label" for="from-city">Départ</label>
+            <select class="field-input" id="from-city">
+              <option value="">Choisir une ville</option>
+              <option value="BOD" selected>Bordeaux (BOD)</option>
+            </select>
+          </div>
+
+          <div style="display:flex;align-items:flex-end;justify-content:center;">
+            <button class="swap-btn" id="swap-btn" title="Inverser" onclick="/* swap handled in JS */">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5"><path d="M8 3 3 8l5 5M3 8h13M16 21l5-5-5-5M21 16H8"/></svg>
+            </button>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label" for="to-city">Destination</label>
+            <select class="field-input" id="to-city">
+              <option value="">Choisir une destination</option>
+              <option value="BCN">Barcelone (BCN)</option>
+              <option value="LIS">Lisbonne (LIS)</option>
+              <option value="DUB">Dublin (DUB)</option>
+              <option value="FCO">Rome (FCO)</option>
+              <option value="AMS">Amsterdam (AMS)</option>
+              <option value="ATH">Athènes (ATH)</option>
+              <option value="PRG">Prague (PRG)</option>
+              <option value="MLA">Malte (MLA)</option>
+              <option value="MAD">Madrid (MAD)</option>
+              <option value="VIE">Vienne (VIE)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="date-time-row">
+          <div class="field-group">
+            <label class="field-label" for="travel-date">Date du vol</label>
+            <input type="date" class="field-input" id="travel-date" />
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="travel-time">Heure préférée</label>
+            <select class="field-input" id="travel-time">
+              <option value="">Peu importe</option>
+              <option value="morning">Matin (06h – 12h)</option>
+              <option value="afternoon">Après-midi (12h – 18h)</option>
+              <option value="evening">Soir (18h – 23h)</option>
+            </select>
+          </div>
+        </div>
+
+        <button class="btn-primary" id="search-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          Rechercher un vol
+        </button>
       </div>
     </div>
   </div>
 
   <!-- Destinations populaires -->
-  <h2 class="section-title">Destinations populaires</h2>
-  <div class="grid-4" id="destGrid">
-    <div style="text-align:center;padding:2rem;color:var(--gray);grid-column:1/-1;">
-      <div class="spinner" style="margin:0 auto 1rem;"></div>
-      Chargement des destinations...
+  <div class="popular-section">
+    <h2 class="section-heading">Destinations populaires</h2>
+    <p class="section-sub">Cliquez sur une destination pour la sélectionner rapidement</p>
+    <div class="dest-grid" id="dest-grid">
+      <!-- Injecté par script.js -->
     </div>
   </div>
+</section>
 
-  <!-- Promo banner -->
-  <div class="promo-strip" id="promoBanner" style="margin-top:2rem;">
-    <div class="promo-label">Cartes Cadeaux</div>
-    <div class="promo-body">
-      <div class="promo-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
-      </div>
-      <div class="promo-text">
-        <div class="promo-h" id="promoTitle">Chargement...</div>
-        <div class="promo-sub" id="promoSub"></div>
-        <div class="promo-desc" id="promoDesc"></div>
-      </div>
-      <button class="btn btn-secondary">Achetez maintenant</button>
+<!-- ══════════════════════════════════
+     SECTION 2 : RÉSULTATS DE VOL
+══════════════════════════════════ -->
+<section class="section" id="section-results">
+  <div class="content-wrap">
+    <div class="back-link" id="back-to-search">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 18-6-6 6-6"/></svg>
+      Retour à la recherche
     </div>
-    <div class="promo-tabs">
-      <div class="p-tab">Location de voiture</div>
-      <div class="p-tab">Hôtels</div>
-      <div class="p-tab">Info importante</div>
-      <div class="p-tab">UK ETA</div>
-    </div>
+    <h2 style="font-size:1.6rem;font-weight:800;margin-bottom:.4rem;" id="results-title">Vols disponibles</h2>
+    <p style="color:var(--mist);margin-bottom:1.5rem;font-size:.9rem;" id="results-subtitle"></p>
+    <div id="flights-list"></div>
   </div>
+</section>
 
-</main>
+<!-- ══════════════════════════════════
+     SECTION 3 : SÉLECTION DU SIÈGE
+══════════════════════════════════ -->
+<section class="section" id="section-seat">
+  <div class="content-wrap">
+    <div class="back-link" id="back-to-results">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 18-6-6 6-6"/></svg>
+      Retour aux résultats
+    </div>
+    <h2 style="font-size:1.6rem;font-weight:800;margin-bottom:.4rem;">Choisissez votre siège</h2>
+    <p style="color:var(--mist);margin-bottom:1.5rem;font-size:.9rem;">Cliquez sur un siège disponible pour le sélectionner</p>
 
-<!-- Toast container -->
-<div class="toast-container" id="toasts"></div>
+    <!-- Résumé du vol sélectionné -->
+    <div class="summary-box" id="seat-flight-summary"></div>
 
-<!-- Email float -->
-<div class="email-tab" onclick="toggleEmail()">
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-</div>
-<div class="email-float" id="emailPanel">
-  <div class="email-float-title">Inscrivez-vous et économisez</div>
-  <div class="email-float-text">Recevez nos meilleures offres directement dans votre boîte mail.</div>
-  <input type="email" placeholder="Adresse e-mail" id="emailInput">
-  <button class="btn btn-primary btn-block" onclick="subscribeEmail()">Je m'inscris !</button>
-</div>
+    <!-- Légende -->
+    <div class="seat-legend">
+      <div class="legend-item"><div class="legend-dot free"></div> Disponible</div>
+      <div class="legend-item"><div class="legend-dot taken"></div> Occupé</div>
+      <div class="legend-item"><div class="legend-dot sel"></div> Votre siège</div>
+    </div>
 
-<footer>
-  <strong>PELO AIRWAYS</strong><br>
-  © 2026 Pelo Airways SAS — Tous droits réservés<br>
-  <small>Les prix affichés incluent les taxes et frais. Offres soumises à disponibilité.</small>
-</footer>
+    <!-- Siège sélectionné info -->
+    <div class="selected-seat-info" id="selected-seat-info" style="display:none;">
+      <p>Siège sélectionné</p>
+      <span class="selected-seat-badge" id="selected-seat-badge">—</span>
+    </div>
 
-<script type="module">
-import {
-  onAuthChange, getUserProfile, logoutUser, isAdmin,
-  getPopularDestinations, getActivePromotions, incrementVisitors,
-  ADMIN_EMAIL
-} from './app.js';
+    <!-- Carte de l'avion -->
+    <div class="aircraft-body">
+      <div class="aircraft-nose"></div>
+      <div class="seat-row-labels">
+        <div class="col-label spacer"></div>
+        <div class="col-label">A</div>
+        <div class="col-label">B</div>
+        <div class="col-label">C</div>
+        <div class="col-label spacer">✈</div>
+        <div class="col-label">D</div>
+        <div class="col-label">E</div>
+        <div class="col-label">F</div>
+      </div>
+      <div class="seat-rows-container" id="seat-map"></div>
+    </div>
 
-// Auth state
-onAuthChange(async user => {
-  const guestEl = document.getElementById('navGuest');
-  const userEl  = document.getElementById('navUser');
-  const adminEl = document.getElementById('navAdmin');
-  if (user) {
-    guestEl.style.display = 'none';
-    userEl.style.display  = 'flex';
-    const profile = await getUserProfile(user.uid);
-    const name    = profile?.displayName || user.email.split('@')[0];
-    document.getElementById('navName').textContent   = name;
-    document.getElementById('navAvatar').textContent = name[0].toUpperCase();
-    if (profile?.role === 'admin' || user.email === ADMIN_EMAIL) {
-      adminEl.style.display = 'block';
-    }
-  } else {
-    guestEl.style.display = 'block';
-    userEl.style.display  = 'none';
-    adminEl.style.display = 'none';
-  }
-});
+    <button class="btn-primary" id="proceed-to-payment" disabled style="opacity:.5;cursor:not-allowed;">
+      Continuer vers le paiement
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg>
+    </button>
+  </div>
+</section>
 
-document.getElementById('btnLogout')?.addEventListener('click', async () => {
-  await logoutUser();
-  window.location.reload();
-});
+<!-- ══════════════════════════════════
+     SECTION 4 : PAIEMENT
+══════════════════════════════════ -->
+<section class="section" id="section-payment">
+  <div class="content-wrap">
+    <div class="back-link" id="back-to-seat">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 18-6-6 6-6"/></svg>
+      Retour à la sélection du siège
+    </div>
+    <h2 style="font-size:1.6rem;font-weight:800;margin-bottom:1.5rem;">Récapitulatif & Paiement</h2>
 
-// Search redirect
-document.getElementById('btnSearch').addEventListener('click', () => {
-  const from = document.getElementById('inputFrom').value.trim();
-  const to   = document.getElementById('inputTo').value.trim();
-  const date = document.getElementById('inputDate').value;
-  window.location.href = `search.html?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&date=${date}`;
-});
+    <!-- Résumé vol -->
+    <div class="summary-box" id="payment-flight-summary" style="margin-bottom:1.5rem;"></div>
 
-// Load destinations
-(async () => {
-  try {
-    const dests = await getPopularDestinations();
-    const grid  = document.getElementById('destGrid');
-    if (!dests.length) { grid.innerHTML = '<p style="color:var(--gray);grid-column:1/-1;text-align:center;">Aucune destination trouvée. <a href="#" onclick="window.seedDB()">Initialiser la base ?</a></p>'; return; }
-    grid.innerHTML = dests.slice(0,8).map(d => `
-      <div class="dest-card" onclick="window.location.href='search.html?to=${d.iata}'">
-        <div class="dest-img-placeholder">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+    <!-- Prix -->
+    <div class="payment-card">
+      <h3>Détail du prix</h3>
+      <div class="price-breakdown" id="price-breakdown"></div>
+    </div>
+
+    <!-- Informations de paiement fictives -->
+    <div class="payment-card">
+      <h3>Informations de paiement <span style="color:var(--mist);font-size:.75rem;font-weight:400;">(simulation)</span></h3>
+      <div class="fake-card-fields">
+        <div class="fake-input-wrap fake-card-full">
+          <span class="fake-label">Numéro de carte</span>
+          <input class="fake-input" placeholder="4242 4242 4242 4242" readonly />
         </div>
-        <div class="dest-body">
-          <div class="dest-iata">${d.iata}</div>
-          <div class="dest-name">${d.name}</div>
-          <div class="dest-country">${d.country}</div>
-          <div class="dest-from">Dès <strong>24,99 €</strong></div>
+        <div class="fake-input-wrap">
+          <span class="fake-label">Expiration</span>
+          <input class="fake-input" placeholder="12 / 28" readonly />
+        </div>
+        <div class="fake-input-wrap">
+          <span class="fake-label">CVC</span>
+          <input class="fake-input" placeholder="•••" readonly />
+        </div>
+        <div class="fake-input-wrap fake-card-full">
+          <span class="fake-label">Titulaire</span>
+          <input class="fake-input" placeholder="Prénom Nom" readonly />
         </div>
       </div>
-    `).join('');
-  } catch(e) { console.error(e); }
-})();
+    </div>
 
-// Load promo
-(async () => {
-  try {
-    const promos = await getActivePromotions();
-    const p2 = promos.find(p => p.id === 'promo_graduation') || promos[1];
-    if (p2) {
-      document.getElementById('promoTitle').textContent = p2.title;
-      document.getElementById('promoSub').textContent   = p2.subtitle || '';
-      document.getElementById('promoDesc').textContent  = p2.description;
-    }
-    const p1 = promos[0];
-    if (p1) {
-      document.getElementById('heroTitle').textContent = p1.title;
-      document.getElementById('heroPrice').textContent = p1.badgeText;
-    }
-  } catch(e) { console.error(e); }
-})();
+    <button class="btn-primary" id="pay-btn">
+      🔒 Payer maintenant — 0 Robux
+    </button>
+  </div>
+</section>
 
-incrementVisitors().catch(()=>{});
+<!-- ══════════════════════════════════
+     SECTION 5 : CONFIRMATION
+══════════════════════════════════ -->
+<section class="section" id="section-confirmation">
+  <div class="confirmation-wrap">
+    <div class="checkmark-ring">
+      <svg viewBox="0 0 48 48">
+        <polyline points="8,24 20,36 40,14"/>
+      </svg>
+    </div>
+    <h2 class="confirm-title">Réservation confirmée !</h2>
+    <p class="confirm-sub">Votre vol a été réservé avec succès.<br>Un e-mail de confirmation vous sera envoyé.</p>
 
-// Toast
-window.showToast = (msg, type='info') => {
-  const c = document.getElementById('toasts');
-  const t = document.createElement('div');
-  t.className = `toast ${type}`;
-  t.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span>${msg}</span>`;
-  c.appendChild(t);
-  setTimeout(() => t.remove(), 4000);
-};
+    <!-- Ticket -->
+    <div class="confirm-ticket">
+      <div class="ticket-top" id="ticket-top"></div>
+      <div class="ticket-tear">
+        <div class="ticket-circle left"></div>
+        <div class="ticket-dash-line"></div>
+        <div class="ticket-circle right"></div>
+      </div>
+      <div class="ticket-bottom" id="ticket-bottom"></div>
+      <!-- Barcode décoratif -->
+      <div class="barcode" id="barcode"></div>
+    </div>
 
-window.toggleEmail = () => {
-  const p = document.getElementById('emailPanel');
-  p.style.display = p.style.display === 'none' ? 'block' : 'none';
-};
+    <button class="btn-primary" onclick="App.resetBooking ? App.resetBooking() : location.reload()">
+      ✈ Nouveau vol
+    </button>
+  </div>
+</section>
 
-window.subscribeEmail = () => {
-  const v = document.getElementById('emailInput').value;
-  if (!v.includes('@')) { showToast('Adresse email invalide', 'error'); return; }
-  showToast('Inscription confirmée ! Merci 🎉', 'success');
-  document.getElementById('emailPanel').style.display = 'none';
-};
-
-import { seedAll } from './app.js';
-window.seedDB = async () => {
-  showToast('Initialisation en cours...');
-  const ok = await seedAll();
-  if (ok) { showToast('Base initialisée !', 'success'); location.reload(); }
-  else showToast('Erreur lors du seed', 'error');
-};
-</script>
+<!-- Scripts -->
+<script src="app.js"></script>
+<script src="script.js"></script>
 </body>
 </html>
