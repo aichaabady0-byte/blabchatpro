@@ -2,7 +2,7 @@
   "name": "blabchatpro",
   "version": "1.0.0",
   "description": "dqsdqsdqsdqsdqsd",
-  "main": "index.js",
+  "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
