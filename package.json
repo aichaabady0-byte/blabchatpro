@@ -1,0 +1,19 @@
+{
+  "name": "blabchatpro",
+  "version": "1.0.0",
+  "description": "Mon super chat",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "build": "echo 'Pas de build requis'"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aichaabady0-byte/blabchatpro.git"
+  },
+  "dependencies": {
+    "express": "^4.22.2"
+  },
+  "author": "",
+  "license": "ISC"
+}
