@@ -1,19 +1,16 @@
 {
-  "name": "blabchatpro",
+  "name": "pelo-airways",
   "version": "1.0.0",
-  "description": "Mon super chat",
+  "description": "Site de réservation de vols Pelo Airways",
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
-    "build": "echo 'Pas de build requis'"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/aichaabady0-byte/blabchatpro.git"
+    "dev": "node app.js"
   },
   "dependencies": {
-    "express": "^4.22.2"
+    "express": "^4.18.2"
   },
-  "author": "",
-  "license": "ISC"
+  "engines": {
+    "node": ">=18.0.0"
+  }
 }
