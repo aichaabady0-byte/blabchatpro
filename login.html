@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pelo Airways — Connexion</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --ink:    #0d0d0f;
+      --paper:  #f5f3ee;
+      --cream:  #ede9e0;
+      --accent: #c8402a;
+      --accent2:#e8763a;
+      --sky:    #1a3a5c;
+      --mist:   #8e99aa;
+      --radius: 14px;
+      --trans:  .25s cubic-bezier(.4,0,.2,1);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--paper);
+      color: var(--ink);
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+    @media(max-width:768px){ body { grid-template-columns: 1fr; } .hero-panel { display:none; } }
+
+    /* ── HERO PANEL ── */
+    .hero-panel {
+      background: linear-gradient(135deg, var(--sky) 0%, #0d2340 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 3rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-panel::before {
+      content:'';
+      position:absolute; inset:0;
+      background-image: linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px),
+                        linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);
+      background-size: 48px 48px;
+    }
+    .hero-panel::after {
+      content:'✈';
+      position:absolute; right:-40px; bottom:60px;
+      font-size:280px; opacity:.04; line-height:1;
+    }
+    .hero-logo {
+      position:relative;
+      font-family:'Syne',sans-serif; font-weight:800; font-size:1.4rem;
+      color:#fff; display:flex; align-items:center; gap:.6rem;
+    }
+    .logo-box {
+      width:36px; height:36px; background:var(--accent); border-radius:10px;
+      display:grid; place-items:center;
+    }
+    .logo-box svg { width:20px; height:20px; fill:white; }
+    .hero-text { position:relative; }
+    .hero-text h2 {
+      font-family:'Syne',sans-serif; font-weight:800;
+      font-size:2.2rem; color:#fff; line-height:1.15; margin-bottom:1rem;
+    }
+    .hero-text h2 em { font-style:normal; color:var(--accent2); }
+    .hero-text p { color:rgba(255,255,255,.55); font-size:.95rem; line-height:1.7; }
+    .hero-stats {
+      position:relative;
+      display:flex; gap:2rem;
+    }
+    .stat { color:#fff; }
+    .stat-num { font-family:'Syne',sans-serif; font-weight:800; font-size:1.6rem; }
+    .stat-label { font-size:.75rem; color:rgba(255,255,255,.45); margin-top:.1rem; }
+
+    /* ── FORM PANEL ── */
+    .form-panel {
+      display:flex; flex-direction:column;
+      justify-content:center; align-items:center;
+      padding: clamp(2rem,6vw,4rem) clamp(1.5rem,4vw,3rem);
+    }
+    .form-box { width:100%; max-width:420px; }
+
+    .form-title {
+      font-family:'Syne',sans-serif; font-weight:800;
+      font-size:1.8rem; margin-bottom:.3rem;
+    }
+    .form-sub { color:var(--mist); font-size:.9rem; margin-bottom:2rem; }
+
+    /* Tabs */
+    .tabs {
+      display:flex; gap:0;
+      background:var(--cream); border-radius:12px; padding:4px;
+      margin-bottom:2rem;
+    }
+    .tab {
+      flex:1; padding:.6rem;
+      font-family:'Syne',sans-serif; font-weight:700; font-size:.85rem;
+      border:none; background:transparent; cursor:pointer;
+      border-radius:9px; color:var(--mist);
+      transition: background var(--trans), color var(--trans), box-shadow var(--trans);
+    }
+    .tab.active {
+      background:#fff; color:var(--ink);
+      box-shadow: 0 2px 8px rgba(0,0,0,.08);
+    }
+
+    /* Fields */
+    .field-group { display:flex; flex-direction:column; gap:.35rem; margin-bottom:1rem; }
+    .field-label {
+      font-size:.72rem; font-weight:700; letter-spacing:1.5px;
+      text-transform:uppercase; color:var(--mist);
+    }
+    .field-input {
+      font-family:'DM Sans',sans-serif; font-size:1rem; font-weight:500;
+      color:var(--ink); background:var(--paper);
+      border:2px solid transparent; border-radius:var(--radius);
+      padding:.75rem 1rem; outline:none;
+      transition: border-color var(--trans), background var(--trans);
+      width:100%;
+    }
+    .field-input:focus { border-color:var(--accent); background:#fff; }
+    .field-input.error { border-color:var(--accent); }
+
+    .btn-primary {
+      font-family:'Syne',sans-serif; font-size:1rem; font-weight:700;
+      color:#fff;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+      border:none; border-radius:var(--radius);
+      padding:.9rem 2rem; cursor:pointer;
+      display:flex; align-items:center; justify-content:center; gap:.6rem;
+      transition: transform var(--trans), box-shadow var(--trans), opacity var(--trans);
+      box-shadow: 0 4px 20px rgba(200,64,42,.35);
+      width:100%; margin-top:.5rem;
+    }
+    .btn-primary:hover { transform:translateY(-2px); box-shadow:0 8px 30px rgba(200,64,42,.5); }
+    .btn-primary:disabled { opacity:.5; cursor:not-allowed; transform:none; }
+
+    .divider {
+      display:flex; align-items:center; gap:1rem;
+      color:var(--mist); font-size:.8rem; margin:1rem 0;
+    }
+    .divider::before, .divider::after {
+      content:''; flex:1; height:1px; background:var(--cream);
+    }
+
+    .back-home {
+      display:inline-flex; align-items:center; gap:.4rem;
+      font-size:.82rem; color:var(--mist); margin-top:1.5rem;
+      cursor:pointer; text-decoration:none;
+      transition:color var(--trans);
+    }
+    .back-home:hover { color:var(--ink); }
+
+    /* Error / success messages */
+    .msg {
+      padding:.8rem 1rem; border-radius:10px;
+      font-size:.85rem; font-weight:500;
+      margin-bottom:1rem; display:none;
+    }
+    .msg.error   { background:#fdeaea; color:#c0392b; display:block; }
+    .msg.success { background:#eafaf1; color:#1e8449; display:block; }
+
+    /* Loader spinner */
+    .spinner {
+      width:18px; height:18px;
+      border:2px solid rgba(255,255,255,.4);
+      border-top-color:#fff; border-radius:50%;
+      animation: spin .7s linear infinite; display:none;
+    }
+    @keyframes spin { to { transform:rotate(360deg); } }
+
+    /* Admin badge */
+    .admin-hint {
+      background: linear-gradient(135deg,#fff8f0,#fff3e8);
+      border:1px solid #f5cba7; border-radius:10px;
+      padding:.7rem 1rem; font-size:.78rem; color:#a04000;
+      margin-bottom:1rem; display:flex; align-items:center; gap:.5rem;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── PANEL GAUCHE (déco) ── -->
+<div class="hero-panel">
+  <div class="hero-logo">
+    <div class="logo-box">
+      <svg viewBox="0 0 24 24"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg>
+    </div>
+    Pelo Airways
+  </div>
+  <div class="hero-text">
+    <h2>Volez vers <em>l'Europe</em><br>pour presque rien</h2>
+    <p>Créez un compte pour réserver vos vols, accéder à votre historique de réservations et gérer vos voyages en toute simplicité.</p>
+  </div>
+  <div class="hero-stats">
+    <div class="stat"><div class="stat-num">10+</div><div class="stat-label">Destinations</div></div>
+    <div class="stat"><div class="stat-num">9</div><div class="stat-label">Vols actifs</div></div>
+    <div class="stat"><div class="stat-num">0€</div><div class="stat-label">Frais cachés</div></div>
+  </div>
+</div>
+
+<!-- ── PANEL DROIT (formulaire) ── -->
+<div class="form-panel">
+  <div class="form-box">
+    <h1 class="form-title">Bienvenue 👋</h1>
+    <p class="form-sub">Connectez-vous ou créez un compte gratuit.</p>
+
+    <!-- Onglets -->
+    <div class="tabs">
+      <button class="tab active" id="tab-login" onclick="switchTab('login')">Connexion</button>
+      <button class="tab" id="tab-register" onclick="switchTab('register')">Créer un compte</button>
+    </div>
+
+    <!-- Message d'erreur/succès -->
+    <div class="msg" id="auth-msg"></div>
+
+    <!-- ── FORMULAIRE CONNEXION ── -->
+    <form id="form-login" onsubmit="handleLogin(event)">
+      <div class="admin-hint">
+        🔑 Admin : <strong>aichaabady0@gmail.com</strong>
+      </div>
+      <div class="field-group">
+        <label class="field-label" for="login-email">Adresse e-mail</label>
+        <input class="field-input" type="email" id="login-email" placeholder="votre@email.com" required/>
+      </div>
+      <div class="field-group">
+        <label class="field-label" for="login-password">Mot de passe</label>
+        <input class="field-input" type="password" id="login-password" placeholder="••••••••" required/>
+      </div>
+      <button class="btn-primary" type="submit" id="btn-login">
+        <span>Se connecter</span>
+        <div class="spinner" id="spinner-login"></div>
+      </button>
+    </form>
+
+    <!-- ── FORMULAIRE INSCRIPTION ── -->
+    <form id="form-register" style="display:none;" onsubmit="handleRegister(event)">
+      <div class="field-group">
+        <label class="field-label" for="reg-name">Prénom & Nom</label>
+        <input class="field-input" type="text" id="reg-name" placeholder="Marie Dupont" required/>
+      </div>
+      <div class="field-group">
+        <label class="field-label" for="reg-email">Adresse e-mail</label>
+        <input class="field-input" type="email" id="reg-email" placeholder="votre@email.com" required/>
+      </div>
+      <div class="field-group">
+        <label class="field-label" for="reg-password">Mot de passe</label>
+        <input class="field-input" type="password" id="reg-password" placeholder="Min. 6 caractères" minlength="6" required/>
+      </div>
+      <button class="btn-primary" type="submit" id="btn-register">
+        <span>Créer mon compte</span>
+        <div class="spinner" id="spinner-register"></div>
+      </button>
+    </form>
+
+    <div class="divider">ou</div>
+    <a class="back-home" href="index.html">
+      ← Retour au site sans connexion
+    </a>
+  </div>
+</div>
+
+<!-- Firebase SDK (compat — pas besoin de module) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+<script>
+// ── Config Firebase ──
+const firebaseConfig = {
+  apiKey:            "AIzaSyD7nXt2AKL5ugYwMiLEyBizZ7O8eEAjeI8",
+  authDomain:        "pelo-airways.firebaseapp.com",
+  databaseURL:       "https://pelo-airways-default-rtdb.firebaseio.com",
+  projectId:         "pelo-airways",
+  storageBucket:     "pelo-airways.firebasestorage.app",
+  messagingSenderId: "467053762663",
+  appId:             "1:467053762663:web:e48a493fe1bade54cf5cc2",
+};
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db   = firebase.firestore();
+
+const ADMIN_EMAIL = "aichaabady0@gmail.com";
+
+// ── Si déjà connecté → redirige ──
+auth.onAuthStateChanged(user => {
+  if (user) {
+    if (user.email === ADMIN_EMAIL) {
+      window.location.href = "admin.html";
+    } else {
+      window.location.href = "index.html";
+    }
+  }
+});
+
+// ── Tabs ──
+function switchTab(tab) {
+  document.getElementById("form-login").style.display    = tab === "login"    ? "block" : "none";
+  document.getElementById("form-register").style.display = tab === "register" ? "block" : "none";
+  document.getElementById("tab-login").classList.toggle("active",    tab === "login");
+  document.getElementById("tab-register").classList.toggle("active", tab === "register");
+  showMsg("", "");
+}
+
+function showMsg(text, type) {
+  const el = document.getElementById("auth-msg");
+  el.textContent  = text;
+  el.className    = `msg ${type}`;
+  el.style.display = text ? "block" : "none";
+}
+
+function setLoading(form, loading) {
+  const btn     = document.getElementById(`btn-${form}`);
+  const spinner = document.getElementById(`spinner-${form}`);
+  btn.disabled           = loading;
+  spinner.style.display  = loading ? "block" : "none";
+}
+
+// ── Connexion ──
+async function handleLogin(e) {
+  e.preventDefault();
+  const email    = document.getElementById("login-email").value.trim();
+  const password = document.getElementById("login-password").value;
+  showMsg("", "");
+  setLoading("login", true);
+  try {
+    const cred = await auth.signInWithEmailAndPassword(email, password);
+    // Redirige selon le rôle
+    if (cred.user.email === ADMIN_EMAIL) {
+      window.location.href = "admin.html";
+    } else {
+      window.location.href = "index.html";
+    }
+  } catch (err) {
+    const msgs = {
+      "auth/user-not-found":   "Aucun compte avec cet e-mail.",
+      "auth/wrong-password":   "Mot de passe incorrect.",
+      "auth/invalid-email":    "Adresse e-mail invalide.",
+      "auth/too-many-requests":"Trop de tentatives. Réessayez plus tard.",
+      "auth/invalid-credential":"E-mail ou mot de passe incorrect.",
+    };
+    showMsg(msgs[err.code] || err.message, "error");
+    setLoading("login", false);
+  }
+}
+
+// ── Inscription ──
+async function handleRegister(e) {
+  e.preventDefault();
+  const name     = document.getElementById("reg-name").value.trim();
+  const email    = document.getElementById("reg-email").value.trim();
+  const password = document.getElementById("reg-password").value;
+  showMsg("", "");
+  setLoading("register", true);
+  try {
+    const cred = await auth.createUserWithEmailAndPassword(email, password);
+    await cred.user.updateProfile({ displayName: name });
+    // Sauvegarde profil dans Firestore
+    await db.collection("users").doc(cred.user.uid).set({
+      uid:         cred.user.uid,
+      email,
+      displayName: name,
+      role:        email === ADMIN_EMAIL ? "admin" : "user",
+      bookings:    [],
+      createdAt:   firebase.firestore.FieldValue.serverTimestamp(),
+    });
+    showMsg("Compte créé ! Redirection...", "success");
+    setTimeout(() => { window.location.href = "index.html"; }, 1200);
+  } catch (err) {
+    const msgs = {
+      "auth/email-already-in-use":"Un compte existe déjà avec cet e-mail.",
+      "auth/weak-password":       "Mot de passe trop faible (min. 6 caractères).",
+      "auth/invalid-email":       "Adresse e-mail invalide.",
+    };
+    showMsg(msgs[err.code] || err.message, "error");
+    setLoading("register", false);
+  }
+}
+</script>
+</body>
+</html>
