@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pelo Airways — Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --ink:    #0d0d0f;
+      --paper:  #f5f3ee;
+      --cream:  #ede9e0;
+      --accent: #c8402a;
+      --accent2:#e8763a;
+      --sky:    #1a3a5c;
+      --mist:   #8e99aa;
+      --green:  #27ae60;
+      --sidebar-w: 240px;
+      --radius: 12px;
+      --trans:  .2s ease;
+    }
+    *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:'DM Sans',sans-serif; background:var(--paper); color:var(--ink); display:flex; min-height:100vh; }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      width: var(--sidebar-w);
+      background: var(--sky);
+      display:flex; flex-direction:column;
+      position:fixed; top:0; left:0; bottom:0;
+      z-index:50; padding:1.5rem 1rem;
+    }
+    .sidebar-logo {
+      font-family:'Syne',sans-serif; font-weight:800; font-size:1.2rem;
+      color:#fff; display:flex; align-items:center; gap:.6rem;
+      margin-bottom:2rem; padding:.5rem;
+    }
+    .logo-box { width:32px; height:32px; background:var(--accent); border-radius:8px; display:grid; place-items:center; }
+    .logo-box svg { width:18px; height:18px; fill:white; }
+    .sidebar-section-label {
+      font-size:.65rem; font-weight:700; letter-spacing:2px; text-transform:uppercase;
+      color:rgba(255,255,255,.3); padding:.5rem .75rem; margin-bottom:.25rem;
+    }
+    .nav-item {
+      display:flex; align-items:center; gap:.75rem;
+      padding:.65rem .75rem; border-radius:10px;
+      color:rgba(255,255,255,.55); cursor:pointer; font-size:.9rem; font-weight:500;
+      transition: background var(--trans), color var(--trans);
+      margin-bottom:.15rem; text-decoration:none;
+    }
+    .nav-item:hover { background:rgba(255,255,255,.08); color:#fff; }
+    .nav-item.active { background:rgba(255,255,255,.15); color:#fff; }
+    .nav-item svg { width:18px; height:18px; flex-shrink:0; }
+    .sidebar-spacer { flex:1; }
+    .sidebar-user {
+      background:rgba(255,255,255,.08); border-radius:10px;
+      padding:.75rem; display:flex; align-items:center; gap:.6rem;
+    }
+    .user-avatar {
+      width:34px; height:34px; background:var(--accent); border-radius:50%;
+      display:grid; place-items:center; font-family:'Syne',sans-serif;
+      font-weight:800; font-size:.85rem; color:#fff; flex-shrink:0;
+    }
+    .user-info { min-width:0; }
+    .user-name { font-size:.82rem; font-weight:700; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .user-role { font-size:.7rem; color:rgba(255,255,255,.4); }
+    .btn-logout {
+      margin-left:auto; background:none; border:none; cursor:pointer;
+      color:rgba(255,255,255,.4); transition:color var(--trans); padding:.25rem;
+    }
+    .btn-logout:hover { color:#fff; }
+    .btn-logout svg { width:16px; height:16px; }
+
+    /* ── MAIN ── */
+    .main {
+      margin-left: var(--sidebar-w);
+      flex:1; display:flex; flex-direction:column; min-height:100vh;
+    }
+    .topbar {
+      background:#fff; border-bottom:1px solid var(--cream);
+      padding:1rem 2rem; display:flex; align-items:center; justify-content:space-between;
+      position:sticky; top:0; z-index:40;
+    }
+    .topbar h1 { font-family:'Syne',sans-serif; font-weight:800; font-size:1.3rem; }
+    .topbar-actions { display:flex; gap:.75rem; align-items:center; }
+
+    .content { padding:2rem; flex:1; }
+
+    /* ── STAT CARDS ── */
+    .stats-grid {
+      display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+      gap:1rem; margin-bottom:2rem;
+    }
+    .stat-card {
+      background:#fff; border-radius:var(--radius); padding:1.25rem 1.5rem;
+      box-shadow:0 2px 12px rgba(0,0,0,.06);
+    }
+    .stat-card-label { font-size:.72rem; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--mist); margin-bottom:.4rem; }
+    .stat-card-value { font-family:'Syne',sans-serif; font-weight:800; font-size:2rem; }
+    .stat-card-value.red    { color:var(--accent); }
+    .stat-card-value.blue   { color:var(--sky); }
+    .stat-card-value.green  { color:var(--green); }
+    .stat-card-value.orange { color:var(--accent2); }
+
+    /* ── PANELS (tabs de contenu) ── */
+    .panel { display:none; }
+    .panel.active { display:block; }
+
+    /* ── TOOLBAR (recherche + bouton ajouter) ── */
+    .toolbar {
+      display:flex; align-items:center; justify-content:space-between;
+      gap:1rem; margin-bottom:1.25rem; flex-wrap:wrap;
+    }
+    .search-input {
+      font-family:'DM Sans',sans-serif; font-size:.9rem;
+      background:var(--paper); border:2px solid transparent; border-radius:var(--radius);
+      padding:.6rem 1rem; outline:none; width:280px; max-width:100%;
+      transition:border-color var(--trans);
+    }
+    .search-input:focus { border-color:var(--accent); }
+
+    /* ── BUTTONS ── */
+    .btn {
+      font-family:'Syne',sans-serif; font-size:.82rem; font-weight:700;
+      border:none; border-radius:var(--radius); padding:.6rem 1.2rem;
+      cursor:pointer; display:inline-flex; align-items:center; gap:.4rem;
+      transition: transform var(--trans), box-shadow var(--trans), background var(--trans);
+    }
+    .btn-red   { background:var(--accent); color:#fff; }
+    .btn-blue  { background:var(--sky);    color:#fff; }
+    .btn-green { background:var(--green);  color:#fff; }
+    .btn-ghost { background:var(--cream);  color:var(--ink); }
+    .btn:hover { transform:translateY(-1px); box-shadow:0 4px 12px rgba(0,0,0,.15); }
+    .btn-sm    { padding:.4rem .8rem; font-size:.75rem; }
+    .btn-danger { background:#fdeaea; color:var(--accent); }
+    .btn-danger:hover { background:var(--accent); color:#fff; }
+
+    /* ── TABLE ── */
+    .table-wrap { background:#fff; border-radius:var(--radius); overflow:hidden; box-shadow:0 2px 12px rgba(0,0,0,.06); }
+    table { width:100%; border-collapse:collapse; }
+    th {
+      text-align:left; font-family:'Syne',sans-serif; font-size:.72rem;
+      font-weight:700; letter-spacing:1.5px; text-transform:uppercase;
+      color:var(--mist); padding:.8rem 1rem; border-bottom:2px solid var(--cream);
+      background:#fafaf8; white-space:nowrap;
+    }
+    td { padding:.8rem 1rem; border-bottom:1px solid var(--cream); font-size:.88rem; vertical-align:middle; }
+    tr:last-child td { border-bottom:none; }
+    tr:hover td { background:#fafaf8; }
+    .empty-row td { text-align:center; padding:3rem; color:var(--mist); }
+
+    .badge {
+      display:inline-block; padding:.2rem .6rem; border-radius:50px;
+      font-size:.72rem; font-weight:700;
+    }
+    .badge-green  { background:#eaf6ea; color:#2a7a3a; }
+    .badge-red    { background:#fdeaea; color:var(--accent); }
+    .badge-grey   { background:#f0f0f0; color:#666; }
+    .badge-orange { background:#fff3e8; color:#a04000; }
+
+    /* ── MODAL ── */
+    .modal-overlay {
+      position:fixed; inset:0; background:rgba(0,0,0,.4); backdrop-filter:blur(4px);
+      z-index:200; display:none; align-items:center; justify-content:center; padding:1rem;
+    }
+    .modal-overlay.open { display:flex; }
+    .modal {
+      background:#fff; border-radius:18px; padding:2rem;
+      width:100%; max-width:540px; max-height:90vh; overflow-y:auto;
+      animation: modalIn .25s ease both;
+    }
+    @keyframes modalIn { from{transform:scale(.95);opacity:0} to{transform:scale(1);opacity:1} }
+    .modal-header {
+      display:flex; align-items:center; justify-content:space-between;
+      margin-bottom:1.5rem;
+    }
+    .modal-title { font-family:'Syne',sans-serif; font-weight:800; font-size:1.1rem; }
+    .modal-close {
+      background:var(--cream); border:none; border-radius:50%;
+      width:32px; height:32px; cursor:pointer; font-size:1.1rem;
+      display:grid; place-items:center; transition:background var(--trans);
+    }
+    .modal-close:hover { background:var(--accent); color:#fff; }
+
+    /* Form fields in modal */
+    .modal-grid { display:grid; grid-template-columns:1fr 1fr; gap:.8rem; }
+    .modal-grid .full { grid-column:1/-1; }
+    .mfield { display:flex; flex-direction:column; gap:.3rem; }
+    .mlabel { font-size:.68rem; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--mist); }
+    .minput {
+      font-family:'DM Sans',sans-serif; font-size:.9rem;
+      background:var(--paper); border:2px solid transparent; border-radius:10px;
+      padding:.6rem .8rem; outline:none; width:100%;
+      transition:border-color var(--trans);
+    }
+    .minput:focus { border-color:var(--accent); }
+    .minput option { font-weight:400; }
+
+    .modal-footer { display:flex; gap:.75rem; justify-content:flex-end; margin-top:1.5rem; }
+
+    /* ── TOAST ── */
+    #toast { position:fixed; bottom:2rem; right:2rem; z-index:999; }
+    .toast-item {
+      background:var(--ink); color:#fff; padding:.7rem 1.2rem;
+      border-radius:10px; font-size:.85rem; margin-top:.4rem;
+      animation: toastIn .3s ease; max-width:300px;
+    }
+    .toast-item.ok  { background:var(--green); }
+    .toast-item.err { background:var(--accent); }
+    @keyframes toastIn { from{transform:translateX(120%);opacity:0} to{transform:translateX(0);opacity:1} }
+
+    /* ── RESPONSIVE ── */
+    @media(max-width:900px){
+      .sidebar { transform:translateX(-100%); transition:transform .3s ease; }
+      .sidebar.open { transform:translateX(0); }
+      .main { margin-left:0; }
+      .topbar { padding:1rem; }
+      .content { padding:1rem; }
+    }
+    @media(max-width:600px){ .modal-grid { grid-template-columns:1fr; } .modal-grid .full { grid-column:1; } }
+  </style>
+</head>
+<body>
+
+<!-- ════════════════ SIDEBAR ════════════════ -->
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-box"><svg viewBox="0 0 24 24"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg></div>
+    Pelo Admin
+  </div>
+
+  <div class="sidebar-section-label">Navigation</div>
+  <a class="nav-item active" id="nav-dashboard" onclick="showPanel('dashboard')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+    Dashboard
+  </a>
+  <a class="nav-item" id="nav-flights" onclick="showPanel('flights')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg>
+    Vols
+  </a>
+  <a class="nav-item" id="nav-destinations" onclick="showPanel('destinations')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="10" r="3"/><path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 6.9 8 11.7z"/></svg>
+    Destinations
+  </a>
+  <a class="nav-item" id="nav-bookings" onclick="showPanel('bookings')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="2"/><path d="M9 12h6M9 16h4"/></svg>
+    Réservations
+  </a>
+  <a class="nav-item" id="nav-users" onclick="showPanel('users')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    Utilisateurs
+  </a>
+
+  <div class="sidebar-spacer"></div>
+
+  <a class="nav-item" href="index.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
+    Voir le site
+  </a>
+
+  <div class="sidebar-user">
+    <div class="user-avatar" id="user-avatar">A</div>
+    <div class="user-info">
+      <div class="user-name" id="user-name">Admin</div>
+      <div class="user-role">Administrateur</div>
+    </div>
+    <button class="btn-logout" onclick="logout()" title="Se déconnecter">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+    </button>
+  </div>
+</nav>
+
+<!-- ════════════════ MAIN ════════════════ -->
+<div class="main">
+  <div class="topbar">
+    <h1 id="topbar-title">Dashboard</h1>
+    <div class="topbar-actions">
+      <button class="btn btn-red btn-sm" id="btn-seed" onclick="runSeed()">⚡ Initialiser la DB</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ══ DASHBOARD ══ -->
+    <div class="panel active" id="panel-dashboard">
+      <div class="stats-grid" id="stats-grid">
+        <div class="stat-card"><div class="stat-card-label">Vols actifs</div><div class="stat-card-value blue" id="stat-flights">—</div></div>
+        <div class="stat-card"><div class="stat-card-label">Destinations</div><div class="stat-card-value red" id="stat-destinations">—</div></div>
+        <div class="stat-card"><div class="stat-card-label">Réservations</div><div class="stat-card-value green" id="stat-bookings">—</div></div>
+        <div class="stat-card"><div class="stat-card-label">Utilisateurs</div><div class="stat-card-value orange" id="stat-users">—</div></div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Vol</th><th>Destination</th><th>Date</th><th>Places dispo</th><th>Prix</th><th>Statut</th></tr></thead>
+          <tbody id="dash-flights-body"><tr class="empty-row"><td colspan="6">Chargement…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══ VOLS ══ -->
+    <div class="panel" id="panel-flights">
+      <div class="toolbar">
+        <input class="search-input" placeholder="🔍 Rechercher un vol…" oninput="filterFlights(this.value)"/>
+        <button class="btn btn-red" onclick="openFlightModal()">+ Ajouter un vol</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>N° Vol</th><th>Trajet</th><th>Date</th><th>Horaires</th><th>Prix</th><th>Places</th><th>Statut</th><th>Actions</th></tr></thead>
+          <tbody id="flights-body"><tr class="empty-row"><td colspan="8">Chargement…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══ DESTINATIONS ══ -->
+    <div class="panel" id="panel-destinations">
+      <div class="toolbar">
+        <input class="search-input" placeholder="🔍 Rechercher une destination…" oninput="filterDestinations(this.value)"/>
+        <button class="btn btn-red" onclick="openDestModal()">+ Ajouter une destination</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Ville</th><th>Pays</th><th>IATA</th><th>Aéroport</th><th>Populaire</th><th>Actions</th></tr></thead>
+          <tbody id="destinations-body"><tr class="empty-row"><td colspan="6">Chargement…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══ RÉSERVATIONS ══ -->
+    <div class="panel" id="panel-bookings">
+      <div class="toolbar">
+        <input class="search-input" placeholder="🔍 Rechercher…" oninput="filterBookings(this.value)"/>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>ID</th><th>Vol</th><th>Passager</th><th>Siège</th><th>Montant</th><th>Date</th><th>Statut</th><th>Actions</th></tr></thead>
+          <tbody id="bookings-body"><tr class="empty-row"><td colspan="8">Chargement…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══ UTILISATEURS ══ -->
+    <div class="panel" id="panel-users">
+      <div class="toolbar">
+        <input class="search-input" placeholder="🔍 Rechercher un utilisateur…" oninput="filterUsers(this.value)"/>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Nom</th><th>E-mail</th><th>Rôle</th><th>Inscrit le</th><th>Actions</th></tr></thead>
+          <tbody id="users-body"><tr class="empty-row"><td colspan="5">Chargement…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- ════════════════ MODAL VOL ════════════════ -->
+<div class="modal-overlay" id="modal-flight">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-flight-title">Ajouter un vol</span>
+      <button class="modal-close" onclick="closeModal('modal-flight')">✕</button>
+    </div>
+    <div class="modal-grid">
+      <div class="mfield"><label class="mlabel">N° Vol</label><input class="minput" id="f-number" placeholder="PW101"/></div>
+      <div class="mfield"><label class="mlabel">Appareil</label><input class="minput" id="f-aircraft" placeholder="Boeing 737-800"/></div>
+      <div class="mfield"><label class="mlabel">Ville départ</label><input class="minput" id="f-from-city" placeholder="Bordeaux"/></div>
+      <div class="mfield"><label class="mlabel">IATA départ</label><input class="minput" id="f-from-iata" placeholder="BOD"/></div>
+      <div class="mfield"><label class="mlabel">Ville arrivée</label><input class="minput" id="f-to-city" placeholder="Barcelone"/></div>
+      <div class="mfield"><label class="mlabel">IATA arrivée</label><input class="minput" id="f-to-iata" placeholder="BCN"/></div>
+      <div class="mfield"><label class="mlabel">Date départ</label><input class="minput" type="date" id="f-date"/></div>
+      <div class="mfield"><label class="mlabel">Heure départ</label><input class="minput" type="time" id="f-dep-time"/></div>
+      <div class="mfield"><label class="mlabel">Heure arrivée</label><input class="minput" type="time" id="f-arr-time"/></div>
+      <div class="mfield"><label class="mlabel">Durée (min)</label><input class="minput" type="number" id="f-duration" placeholder="105"/></div>
+      <div class="mfield"><label class="mlabel">Prix (€)</label><input class="minput" type="number" step="0.01" id="f-price" placeholder="29.99"/></div>
+      <div class="mfield"><label class="mlabel">Places dispo</label><input class="minput" type="number" id="f-seats" placeholder="189"/></div>
+      <div class="mfield full"><label class="mlabel">Statut</label>
+        <select class="minput" id="f-status">
+          <option value="active">Actif</option>
+          <option value="full">Complet</option>
+          <option value="cancelled">Annulé</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-flight')">Annuler</button>
+      <button class="btn btn-red" onclick="saveFlight()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ MODAL DESTINATION ════════════════ -->
+<div class="modal-overlay" id="modal-dest">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-dest-title">Ajouter une destination</span>
+      <button class="modal-close" onclick="closeModal('modal-dest')">✕</button>
+    </div>
+    <div class="modal-grid">
+      <div class="mfield"><label class="mlabel">Ville</label><input class="minput" id="d-name" placeholder="Barcelone"/></div>
+      <div class="mfield"><label class="mlabel">Pays</label><input class="minput" id="d-country" placeholder="Espagne"/></div>
+      <div class="mfield"><label class="mlabel">Code IATA</label><input class="minput" id="d-iata" placeholder="BCN"/></div>
+      <div class="mfield"><label class="mlabel">Aéroport</label><input class="minput" id="d-airport" placeholder="El Prat"/></div>
+      <div class="mfield full"><label class="mlabel">Description</label><input class="minput" id="d-desc" placeholder="Description courte…"/></div>
+      <div class="mfield full"><label class="mlabel">URL Image (Unsplash…)</label><input class="minput" id="d-img" placeholder="https://…"/></div>
+      <div class="mfield full"><label class="mlabel">Populaire ?</label>
+        <select class="minput" id="d-popular">
+          <option value="true">Oui</option>
+          <option value="false">Non</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-dest')">Annuler</button>
+      <button class="btn btn-red" onclick="saveDestination()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ TOAST ════════════════ -->
+<div id="toast"></div>
+
+<!-- Firebase SDK (compat) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+
+<script>
+// ════════════════════════════════════════════
+//  FIREBASE INIT
+// ════════════════════════════════════════════
+const firebaseConfig = {
+  apiKey:            "AIzaSyD7nXt2AKL5ugYwMiLEyBizZ7O8eEAjeI8",
+  authDomain:        "pelo-airways.firebaseapp.com",
+  databaseURL:       "https://pelo-airways-default-rtdb.firebaseio.com",
+  projectId:         "pelo-airways",
+  storageBucket:     "pelo-airways.firebasestorage.app",
+  messagingSenderId: "467053762663",
+  appId:             "1:467053762663:web:e48a493fe1bade54cf5cc2",
+};
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db   = firebase.firestore();
+const rtdb = firebase.database();
+
+const ADMIN_EMAIL = "aichaabady0@gmail.com";
+
+// ── Garde : seul l'admin peut accéder ──
+auth.onAuthStateChanged(async user => {
+  if (!user) { window.location.href = "login.html"; return; }
+  if (user.email !== ADMIN_EMAIL) { window.location.href = "index.html"; return; }
+  // Affiche l'avatar
+  document.getElementById("user-name").textContent = user.displayName || user.email.split("@")[0];
+  document.getElementById("user-avatar").textContent = (user.displayName || "A")[0].toUpperCase();
+  // Charge les données
+  loadAll();
+});
+
+// ════════════════════════════════════════════
+//  SEED DATA (données initiales)
+// ════════════════════════════════════════════
+const SEED_DESTINATIONS = [
+  { id:"dest_BCN", name:"Barcelone",  country:"Espagne",            iata:"BCN", airport:"Barcelone-El Prat",     description:"Capitale de la Catalogne, Sagrada Família et plages.",    imageUrl:"https://images.unsplash.com/photo-1539037116277-4db20889f2d4?w=600", popular:true  },
+  { id:"dest_LIS", name:"Lisbonne",   country:"Portugal",           iata:"LIS", airport:"Humberto Delgado",       description:"Tramways colorés, pastéis de nata et couchers de soleil.",imageUrl:"https://images.unsplash.com/photo-1555881400-74d7acaacd8b?w=600", popular:true  },
+  { id:"dest_DUB", name:"Dublin",     country:"Irlande",            iata:"DUB", airport:"Aéroport de Dublin",     description:"Pubs chaleureux, verdure et culture celtique.",           imageUrl:"https://images.unsplash.com/photo-1549918864-48ac978761a4?w=600", popular:false },
+  { id:"dest_ROM", name:"Rome",       country:"Italie",             iata:"FCO", airport:"Leonardo da Vinci",      description:"Colisée, Vatican — la Ville Éternelle.",                 imageUrl:"https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=600", popular:true  },
+  { id:"dest_AMS", name:"Amsterdam",  country:"Pays-Bas",           iata:"AMS", airport:"Schiphol",               description:"Canaux romantiques, musées world-class.",                imageUrl:"https://images.unsplash.com/photo-1534351590666-13e3e96b5017?w=600", popular:true  },
+  { id:"dest_ATH", name:"Athènes",    country:"Grèce",              iata:"ATH", airport:"Elefthérios-Venizélos", description:"L'Acropole et les meilleures tavernes.",                  imageUrl:"https://images.unsplash.com/photo-1555993539-1732b0258235?w=600", popular:true  },
+  { id:"dest_PRG", name:"Prague",     country:"République Tchèque", iata:"PRG", airport:"Václav Havel",          description:"La ville aux cent clochers, médiévale et magique.",      imageUrl:"https://images.unsplash.com/photo-1592906209472-a36b1f3782ef?w=600", popular:false },
+  { id:"dest_MLA", name:"Malte",      country:"Malte",              iata:"MLA", airport:"Int. de Malte",         description:"Île méditerranéenne aux eaux turquoise.",                 imageUrl:"https://images.unsplash.com/photo-1559582798-678dfc71ccd8?w=600", popular:false },
+  { id:"dest_MAD", name:"Madrid",     country:"Espagne",            iata:"MAD", airport:"Adolfo Suárez Barajas", description:"Prado, tapas, flamenco.",                                imageUrl:"https://images.unsplash.com/photo-1543783207-ec64e4d95325?w=600", popular:true  },
+  { id:"dest_VIE", name:"Vienne",     country:"Autriche",           iata:"VIE", airport:"Schwechat",             description:"Palais impériaux, cafés historiques.",                   imageUrl:"https://images.unsplash.com/photo-1516550893923-42d28e5677af?w=600", popular:false },
+];
+
+const SEED_FLIGHTS = [
+  { id:"FL001", flightNumber:"PW101", from:{city:"Bordeaux",iata:"BOD",airport:"Bordeaux-Mérignac"}, to:{city:"Barcelone",iata:"BCN",airport:"El Prat"},        departureDate:"2026-06-10", departureTime:"07:30", arrivalTime:"09:15", durationMin:105, price:29.99, seatsTotal:189, seatsAvailable:47,  status:"active",   aircraft:"Boeing 737-800" },
+  { id:"FL002", flightNumber:"PW102", from:{city:"Bordeaux",iata:"BOD",airport:"Bordeaux-Mérignac"}, to:{city:"Lisbonne",iata:"LIS",airport:"Humberto Delgado"},departureDate:"2026-06-12", departureTime:"10:00", arrivalTime:"11:45", durationMin:105, price:34.99, seatsTotal:189, seatsAvailable:112, status:"active",   aircraft:"Boeing 737-800" },
+  { id:"FL003", flightNumber:"PW203", from:{city:"Bordeaux",iata:"BOD",airport:"Bordeaux-Mérignac"}, to:{city:"Rome",iata:"FCO",airport:"Leonardo da Vinci"},   departureDate:"2026-06-15", departureTime:"14:20", arrivalTime:"16:40", durationMin:140, price:49.99, seatsTotal:189, seatsAvailable:23,  status:"active",   aircraft:"Airbus A320"   },
+  { id:"FL004", flightNumber:"PW304", from:{city:"Bordeaux",iata:"BOD",airport:"Bordeaux-Mérignac"}, to:{city:"Amsterdam",iata:"AMS",airport:"Schiphol"},       departureDate:"2026-06-18", departureTime:"06:45", arrivalTime:"08:55", durationMin:130, price:39.99, seatsTotal:189, seatsAvailable:0,   status:"full",     aircraft:"Boeing 737-800" },
+  { id:"FL005", flightNumber:"PW405", from:{city:"Bordeaux",iata:"BOD",airport:"Bordeaux-Mérignac"}, to:{city:"Dublin",iata:"DUB",airport:"Aéroport de Dublin"},departureDate:"2026-06-20", departureTime:"11:30", arrivalTime:"13:00", durationMin:150, price:44.99, seatsTotal:189, seatsAvailable:78,  status:"active",   aircraft:"Airbus A320"   },
+  { id:"FL006", flightNumber:"PW506", from:{city:"Bordeaux",iata:"BOD",airport:"Bordeaux-Mérignac"}, to:{city:"Athènes",iata:"ATH",airport:"Elefthérios"},      departureDate:"2026-06-22", departureTime:"08:00", arrivalTime:"11:30", durationMin:210, price:59.99, seatsTotal:189, seatsAvailable:55,  status:"active",   aircraft:"Airbus A321"   },
+  { id:"FL007", flightNumber:"PW607", from:{city:"Bordeaux",iata:"BOD",airport:"Bordeaux-Mérignac"}, to:{city:"Prague",iata:"PRG",airport:"Václav Havel"},      departureDate:"2026-06-25", departureTime:"16:10", arrivalTime:"18:50", durationMin:160, price:24.99, seatsTotal:189, seatsAvailable:134, status:"active",   aircraft:"Boeing 737-800" },
+  { id:"FL008", flightNumber:"PW707", from:{city:"Bordeaux",iata:"BOD",airport:"Bordeaux-Mérignac"}, to:{city:"Malte",iata:"MLA",airport:"Int. de Malte"},      departureDate:"2026-07-01", departureTime:"09:00", arrivalTime:"12:15", durationMin:195, price:54.99, seatsTotal:189, seatsAvailable:88,  status:"active",   aircraft:"Airbus A320"   },
+  { id:"FL009", flightNumber:"PW808", from:{city:"Bordeaux",iata:"BOD",airport:"Bordeaux-Mérignac"}, to:{city:"Madrid",iata:"MAD",airport:"Adolfo Suárez"},     departureDate:"2026-07-05", departureTime:"13:00", arrivalTime:"14:45", durationMin:105, price:19.99, seatsTotal:189, seatsAvailable:160, status:"active",   aircraft:"Boeing 737-800" },
+  { id:"FL010", flightNumber:"PW909", from:{city:"Bordeaux",iata:"BOD",airport:"Bordeaux-Mérignac"}, to:{city:"Barcelone",iata:"BCN",airport:"El Prat"},        departureDate:"2026-06-05", departureTime:"15:30", arrivalTime:"17:15", durationMin:105, price:19.99, seatsTotal:189, seatsAvailable:0,   status:"cancelled",aircraft:"Boeing 737-800" },
+];
+
+// ── Seed : initialise toute la base Firestore ──
+async function runSeed() {
+  if (!confirm("⚡ Cela va réécrire toutes les destinations et tous les vols dans Firebase. Continuer ?")) return;
+  toast("Initialisation en cours…");
+  try {
+    const batch = db.batch();
+    for (const d of SEED_DESTINATIONS) {
+      batch.set(db.collection("destinations").doc(d.id), { ...d, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+    }
+    for (const f of SEED_FLIGHTS) {
+      batch.set(db.collection("flights").doc(f.id), { ...f, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+    }
+    await batch.commit();
+    // Stats Realtime DB
+    await rtdb.ref("stats").set({
+      totalFlights:      SEED_FLIGHTS.length,
+      activeFlights:     SEED_FLIGHTS.filter(f => f.status === "active").length,
+      totalDestinations: SEED_DESTINATIONS.length,
+      visitors:          0,
+    });
+    toast("✅ Base de données initialisée !", "ok");
+    loadAll();
+  } catch (e) {
+    console.error(e);
+    toast("Erreur : " + e.message, "err");
+  }
+}
+
+// ════════════════════════════════════════════
+//  ÉTAT LOCAL
+// ════════════════════════════════════════════
+let allFlights      = [];
+let allDestinations = [];
+let allBookings     = [];
+let allUsers        = [];
+let editingFlightId = null;
+let editingDestId   = null;
+
+// ════════════════════════════════════════════
+//  NAVIGATION
+// ════════════════════════════════════════════
+const panelTitles = { dashboard:"Dashboard", flights:"Gestion des vols", destinations:"Destinations", bookings:"Réservations", users:"Utilisateurs" };
+
+function showPanel(name) {
+  document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+  document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
+  document.getElementById("panel-" + name).classList.add("active");
+  document.getElementById("nav-" + name).classList.add("active");
+  document.getElementById("topbar-title").textContent = panelTitles[name] || name;
+}
+
+// ════════════════════════════════════════════
+//  CHARGEMENT DES DONNÉES
+// ════════════════════════════════════════════
+async function loadAll() {
+  await Promise.all([loadFlights(), loadDestinations(), loadBookings(), loadUsers()]);
+}
+
+async function loadFlights() {
+  try {
+    const snap = await db.collection("flights").orderBy("departureDate").get();
+    allFlights = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderFlights(allFlights);
+    renderDashboardFlights(allFlights);
+    document.getElementById("stat-flights").textContent = allFlights.filter(f => f.status === "active").length;
+  } catch (e) { console.error("loadFlights:", e); }
+}
+
+async function loadDestinations() {
+  try {
+    const snap = await db.collection("destinations").get();
+    allDestinations = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderDestinations(allDestinations);
+    document.getElementById("stat-destinations").textContent = allDestinations.length;
+  } catch (e) { console.error("loadDestinations:", e); }
+}
+
+async function loadBookings() {
+  try {
+    const snap = await db.collection("bookings").orderBy("createdAt","desc").get();
+    allBookings = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderBookings(allBookings);
+    document.getElementById("stat-bookings").textContent = allBookings.length;
+  } catch (e) {
+    // Pas de réservations encore (index manquant possible)
+    allBookings = [];
+    renderBookings([]);
+    document.getElementById("stat-bookings").textContent = 0;
+  }
+}
+
+async function loadUsers() {
+  try {
+    const snap = await db.collection("users").get();
+    allUsers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderUsers(allUsers);
+    document.getElementById("stat-users").textContent = allUsers.length;
+  } catch (e) { console.error("loadUsers:", e); }
+}
+
+// ════════════════════════════════════════════
+//  RENDU — VOLS
+// ════════════════════════════════════════════
+function renderFlights(flights) {
+  const tbody = document.getElementById("flights-body");
+  if (!flights.length) {
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="8">Aucun vol. Cliquez sur "Initialiser la DB" pour commencer.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = flights.map(f => `
+    <tr>
+      <td><strong>${f.flightNumber}</strong><br><small style="color:var(--mist)">${f.aircraft||""}</small></td>
+      <td>${f.from?.iata||"?"} → ${f.to?.iata||"?"}<br><small style="color:var(--mist)">${f.from?.city||""} → ${f.to?.city||""}</small></td>
+      <td>${f.departureDate||"—"}</td>
+      <td>${f.departureTime||"—"} → ${f.arrivalTime||"—"}</td>
+      <td><strong>${(f.price||0).toFixed(2)} €</strong></td>
+      <td>${f.seatsAvailable ?? "—"} / ${f.seatsTotal || 189}</td>
+      <td>${badgeStatus(f.status)}</td>
+      <td>
+        <button class="btn btn-ghost btn-sm" onclick="editFlight('${f.id}')">✏️ Éditer</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteFlight('${f.id}')">🗑</button>
+      </td>
+    </tr>
+  `).join("");
+}
+
+function renderDashboardFlights(flights) {
+  const tbody = document.getElementById("dash-flights-body");
+  if (!flights.length) {
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="6">Aucun vol. Cliquez sur ⚡ Initialiser la DB.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = flights.slice(0,8).map(f => `
+    <tr>
+      <td><strong>${f.flightNumber}</strong></td>
+      <td>${f.from?.iata||"?"} → ${f.to?.city||"?"}</td>
+      <td>${f.departureDate||"—"}</td>
+      <td>${f.seatsAvailable ?? "—"}</td>
+      <td>${(f.price||0).toFixed(2)} €</td>
+      <td>${badgeStatus(f.status)}</td>
+    </tr>
+  `).join("");
+}
+
+function badgeStatus(s) {
+  if (s === "active")    return `<span class="badge badge-green">Actif</span>`;
+  if (s === "full")      return `<span class="badge badge-orange">Complet</span>`;
+  if (s === "cancelled") return `<span class="badge badge-grey">Annulé</span>`;
+  return `<span class="badge badge-grey">${s||"?"}</span>`;
+}
+
+function filterFlights(q) {
+  const r = allFlights.filter(f =>
+    (f.flightNumber||"").toLowerCase().includes(q.toLowerCase()) ||
+    (f.from?.city||"").toLowerCase().includes(q.toLowerCase()) ||
+    (f.to?.city||"").toLowerCase().includes(q.toLowerCase())
+  );
+  renderFlights(r);
+}
+
+// ── Modal vol ──
+function openFlightModal(data = null) {
+  editingFlightId = data ? data.id : null;
+  document.getElementById("modal-flight-title").textContent = data ? "Modifier le vol" : "Ajouter un vol";
+  document.getElementById("f-number").value    = data?.flightNumber  || "";
+  document.getElementById("f-aircraft").value  = data?.aircraft      || "";
+  document.getElementById("f-from-city").value = data?.from?.city    || "";
+  document.getElementById("f-from-iata").value = data?.from?.iata    || "BOD";
+  document.getElementById("f-to-city").value   = data?.to?.city      || "";
+  document.getElementById("f-to-iata").value   = data?.to?.iata      || "";
+  document.getElementById("f-date").value      = data?.departureDate || "";
+  document.getElementById("f-dep-time").value  = data?.departureTime || "";
+  document.getElementById("f-arr-time").value  = data?.arrivalTime   || "";
+  document.getElementById("f-duration").value  = data?.durationMin   || "";
+  document.getElementById("f-price").value     = data?.price         || "";
+  document.getElementById("f-seats").value     = data?.seatsAvailable!== undefined ? data.seatsAvailable : "";
+  document.getElementById("f-status").value    = data?.status        || "active";
+  openModal("modal-flight");
+}
+
+function editFlight(id) {
+  const f = allFlights.find(x => x.id === id);
+  if (f) openFlightModal(f);
+}
+
+async function saveFlight() {
+  const data = {
+    flightNumber:   document.getElementById("f-number").value.trim(),
+    aircraft:       document.getElementById("f-aircraft").value.trim(),
+    from: {
+      city:    document.getElementById("f-from-city").value.trim(),
+      iata:    document.getElementById("f-from-iata").value.trim().toUpperCase(),
+      airport: document.getElementById("f-from-city").value.trim() + " Aéroport",
+    },
+    to: {
+      city:    document.getElementById("f-to-city").value.trim(),
+      iata:    document.getElementById("f-to-iata").value.trim().toUpperCase(),
+      airport: document.getElementById("f-to-city").value.trim() + " Aéroport",
+    },
+    departureDate: document.getElementById("f-date").value,
+    departureTime: document.getElementById("f-dep-time").value,
+    arrivalTime:   document.getElementById("f-arr-time").value,
+    durationMin:   parseInt(document.getElementById("f-duration").value) || 0,
+    price:         parseFloat(document.getElementById("f-price").value)  || 0,
+    seatsAvailable:parseInt(document.getElementById("f-seats").value)    || 0,
+    seatsTotal:    189,
+    status:        document.getElementById("f-status").value,
+  };
+
+  if (!data.flightNumber || !data.from.iata || !data.to.iata) {
+    toast("Remplissez au moins le n° de vol et les IATA.", "err"); return;
+  }
+
+  try {
+    if (editingFlightId) {
+      await db.collection("flights").doc(editingFlightId).update({ ...data, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+      toast("Vol mis à jour ✓", "ok");
+    } else {
+      await db.collection("flights").add({ ...data, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+      toast("Vol ajouté ✓", "ok");
+    }
+    closeModal("modal-flight");
+    loadFlights();
+  } catch (e) { toast("Erreur : " + e.message, "err"); }
+}
+
+async function deleteFlight(id) {
+  if (!confirm("Supprimer ce vol ?")) return;
+  try {
+    await db.collection("flights").doc(id).delete();
+    toast("Vol supprimé.", "ok");
+    loadFlights();
+  } catch (e) { toast("Erreur : " + e.message, "err"); }
+}
+
+// ════════════════════════════════════════════
+//  RENDU — DESTINATIONS
+// ════════════════════════════════════════════
+function renderDestinations(dests) {
+  const tbody = document.getElementById("destinations-body");
+  if (!dests.length) {
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="6">Aucune destination. Initialisez la DB.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = dests.map(d => `
+    <tr>
+      <td><strong>${d.name}</strong></td>
+      <td>${d.country}</td>
+      <td><span class="badge badge-green">${d.iata}</span></td>
+      <td>${d.airport||"—"}</td>
+      <td>${d.popular ? "⭐ Oui" : "Non"}</td>
+      <td>
+        <button class="btn btn-ghost btn-sm" onclick="editDest('${d.id}')">✏️ Éditer</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteDest('${d.id}')">🗑</button>
+      </td>
+    </tr>
+  `).join("");
+}
+
+function filterDestinations(q) {
+  const r = allDestinations.filter(d =>
+    (d.name||"").toLowerCase().includes(q.toLowerCase()) ||
+    (d.country||"").toLowerCase().includes(q.toLowerCase()) ||
+    (d.iata||"").toLowerCase().includes(q.toLowerCase())
+  );
+  renderDestinations(r);
+}
+
+function openDestModal(data = null) {
+  editingDestId = data ? data.id : null;
+  document.getElementById("modal-dest-title").textContent = data ? "Modifier la destination" : "Ajouter une destination";
+  document.getElementById("d-name").value    = data?.name        || "";
+  document.getElementById("d-country").value = data?.country     || "";
+  document.getElementById("d-iata").value    = data?.iata        || "";
+  document.getElementById("d-airport").value = data?.airport     || "";
+  document.getElementById("d-desc").value    = data?.description || "";
+  document.getElementById("d-img").value     = data?.imageUrl    || "";
+  document.getElementById("d-popular").value = data?.popular ? "true" : "false";
+  openModal("modal-dest");
+}
+
+function editDest(id) {
+  const d = allDestinations.find(x => x.id === id);
+  if (d) openDestModal(d);
+}
+
+async function saveDestination() {
+  const data = {
+    name:        document.getElementById("d-name").value.trim(),
+    country:     document.getElementById("d-country").value.trim(),
+    iata:        document.getElementById("d-iata").value.trim().toUpperCase(),
+    airport:     document.getElementById("d-airport").value.trim(),
+    description: document.getElementById("d-desc").value.trim(),
+    imageUrl:    document.getElementById("d-img").value.trim(),
+    popular:     document.getElementById("d-popular").value === "true",
+  };
+
+  if (!data.name || !data.iata) { toast("Nom et IATA requis.", "err"); return; }
+
+  try {
+    if (editingDestId) {
+      await db.collection("destinations").doc(editingDestId).update({ ...data, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+      toast("Destination mise à jour ✓", "ok");
+    } else {
+      await db.collection("destinations").add({ ...data, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+      toast("Destination ajoutée ✓", "ok");
+    }
+    closeModal("modal-dest");
+    loadDestinations();
+  } catch (e) { toast("Erreur : " + e.message, "err"); }
+}
+
+async function deleteDest(id) {
+  if (!confirm("Supprimer cette destination ?")) return;
+  try {
+    await db.collection("destinations").doc(id).delete();
+    toast("Destination supprimée.", "ok");
+    loadDestinations();
+  } catch (e) { toast("Erreur : " + e.message, "err"); }
+}
+
+// ════════════════════════════════════════════
+//  RENDU — RÉSERVATIONS
+// ════════════════════════════════════════════
+function renderBookings(bookings) {
+  const tbody = document.getElementById("bookings-body");
+  if (!bookings.length) {
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="8">Aucune réservation pour l'instant.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = bookings.map(b => {
+    const date = b.createdAt?.toDate ? b.createdAt.toDate().toLocaleDateString("fr-FR") : "—";
+    const status = b.status === "confirmed" ? `<span class="badge badge-green">Confirmée</span>` : `<span class="badge badge-grey">Annulée</span>`;
+    return `
+      <tr>
+        <td><small style="font-family:monospace;">${b.id.slice(-8).toUpperCase()}</small></td>
+        <td>${b.flightNumber || b.flightId || "—"}</td>
+        <td>${b.userEmail || "—"}</td>
+        <td><strong>${b.seat || "—"}</strong></td>
+        <td>${(b.totalPrice || 0).toFixed(2)} €</td>
+        <td>${date}</td>
+        <td>${status}</td>
+        <td>
+          ${b.status !== "cancelled" ? `<button class="btn btn-danger btn-sm" onclick="cancelBooking('${b.id}')">Annuler</button>` : ""}
+        </td>
+      </tr>`;
+  }).join("");
+}
+
+function filterBookings(q) {
+  const r = allBookings.filter(b =>
+    (b.flightNumber||"").toLowerCase().includes(q.toLowerCase()) ||
+    (b.userEmail||"").toLowerCase().includes(q.toLowerCase()) ||
+    (b.seat||"").toLowerCase().includes(q.toLowerCase())
+  );
+  renderBookings(r);
+}
+
+async function cancelBooking(id) {
+  if (!confirm("Annuler cette réservation ?")) return;
+  try {
+    await db.collection("bookings").doc(id).update({ status:"cancelled", cancelledAt: firebase.firestore.FieldValue.serverTimestamp() });
+    toast("Réservation annulée.", "ok");
+    loadBookings();
+  } catch (e) { toast("Erreur : " + e.message, "err"); }
+}
+
+// ════════════════════════════════════════════
+//  RENDU — UTILISATEURS
+// ════════════════════════════════════════════
+function renderUsers(users) {
+  const tbody = document.getElementById("users-body");
+  if (!users.length) {
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="5">Aucun utilisateur enregistré.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = users.map(u => {
+    const date = u.createdAt?.toDate ? u.createdAt.toDate().toLocaleDateString("fr-FR") : "—";
+    const role = u.role === "admin"
+      ? `<span class="badge badge-red">Admin</span>`
+      : `<span class="badge badge-green">Utilisateur</span>`;
+    return `
+      <tr>
+        <td><strong>${u.displayName || "—"}</strong></td>
+        <td>${u.email}</td>
+        <td>${role}</td>
+        <td>${date}</td>
+        <td>
+          ${u.role !== "admin"
+            ? `<button class="btn btn-ghost btn-sm" onclick="promoteUser('${u.id}')">⬆ Admin</button>`
+            : `<button class="btn btn-ghost btn-sm" onclick="demoteUser('${u.id}')">⬇ Rétrograder</button>`}
+        </td>
+      </tr>`;
+  }).join("");
+}
+
+function filterUsers(q) {
+  const r = allUsers.filter(u =>
+    (u.displayName||"").toLowerCase().includes(q.toLowerCase()) ||
+    (u.email||"").toLowerCase().includes(q.toLowerCase())
+  );
+  renderUsers(r);
+}
+
+async function promoteUser(id) {
+  if (!confirm("Promouvoir cet utilisateur en admin ?")) return;
+  await db.collection("users").doc(id).update({ role:"admin" });
+  toast("Utilisateur promu admin.", "ok");
+  loadUsers();
+}
+
+async function demoteUser(id) {
+  if (!confirm("Rétrograder cet admin en utilisateur ?")) return;
+  await db.collection("users").doc(id).update({ role:"user" });
+  toast("Rôle mis à jour.", "ok");
+  loadUsers();
+}
+
+// ════════════════════════════════════════════
+//  UTILS — MODAL / TOAST / LOGOUT
+// ════════════════════════════════════════════
+function openModal(id) { document.getElementById(id).classList.add("open"); }
+function closeModal(id) { document.getElementById(id).classList.remove("open"); }
+
+function toast(msg, type = "") {
+  const container = document.getElementById("toast");
+  const el = document.createElement("div");
+  el.className = `toast-item ${type}`;
+  el.textContent = msg;
+  container.appendChild(el);
+  setTimeout(() => el.remove(), 3200);
+}
+
+async function logout() {
+  await auth.signOut();
+  window.location.href = "login.html";
+}
+
+// Ferme la modal en cliquant à l'extérieur
+document.querySelectorAll(".modal-overlay").forEach(overlay => {
+  overlay.addEventListener("click", e => {
+    if (e.target === overlay) overlay.classList.remove("open");
+  });
+});
+</script>
+</body>
+</html>
