@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FileFac — Pelo Airways</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #080a0f;
+      --surf:     #0f1117;
+      --surf2:    #141720;
+      --border:   #1c2030;
+      --border2:  #252b3d;
+      --gold:     #d4a843;
+      --gold2:    #f0c96a;
+      --blue:     #3d8fd4;
+      --blue2:    #5aabf0;
+      --green:    #3dd4a0;
+      --red:      #d4503d;
+      --txt:      #dde3f5;
+      --muted:    #4a5270;
+      --muted2:   #6b7599;
+      --r:        9px;
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--txt);
+      font-family: 'Syne', sans-serif;
+      font-size: 15px;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Ambient glow */
+    body::before {
+      content:'';
+      position:fixed; top:-200px; left:50%; transform:translateX(-50%);
+      width:700px; height:400px;
+      background: radial-gradient(ellipse, rgba(212,168,67,.07) 0%, transparent 70%);
+      pointer-events:none; z-index:0;
+    }
+
+    /* Grid lines */
+    body::after {
+      content:'';
+      position:fixed; inset:0;
+      background-image:
+        repeating-linear-gradient(0deg, transparent, transparent 47px, rgba(255,255,255,.018) 48px),
+        repeating-linear-gradient(90deg, transparent, transparent 47px, rgba(255,255,255,.018) 48px);
+      pointer-events:none; z-index:0;
+    }
+
+    /* ── TOPBAR ── */
+    nav {
+      position:sticky; top:0; z-index:200;
+      height:56px;
+      display:flex; align-items:center; gap:14px; padding:0 28px;
+      background:rgba(8,10,15,.85);
+      backdrop-filter:blur(18px);
+      border-bottom:1px solid var(--border);
+    }
+    .nav-logo {
+      display:flex; align-items:center; gap:10px;
+      font-weight:800; font-size:15px; letter-spacing:.05em;
+      text-decoration:none; color:var(--txt);
+    }
+    .nav-logo-mark {
+      width:30px; height:30px; border-radius:7px;
+      background: linear-gradient(135deg, var(--gold) 0%, var(--gold2) 100%);
+      display:flex; align-items:center; justify-content:center;
+      font-size:15px; color:#080a0f; font-weight:800;
+    }
+    .nav-sep { flex:1; }
+    .nav-chip {
+      background:rgba(212,168,67,.1); border:1px solid rgba(212,168,67,.25);
+      border-radius:100px; padding:4px 12px;
+      font-size:11px; font-weight:700; letter-spacing:.1em;
+      text-transform:uppercase; color:var(--gold);
+    }
+    .nav-back {
+      font-size:12px; color:var(--muted2); text-decoration:none;
+      font-weight:600; letter-spacing:.04em;
+      padding:6px 14px; border-radius:6px; border:1px solid var(--border2);
+      transition:color .2s, border-color .2s;
+    }
+    .nav-back:hover { color:var(--txt); border-color:var(--muted2); }
+
+    /* ── MAIN ── */
+    main {
+      position:relative; z-index:1;
+      max-width:860px; margin:0 auto;
+      padding:52px 24px 100px;
+    }
+
+    /* ── HERO ── */
+    .hero { margin-bottom:48px; }
+    .hero-eyebrow {
+      font-family:'DM Mono', monospace;
+      font-size:11px; letter-spacing:.18em; text-transform:uppercase;
+      color:var(--gold); margin-bottom:12px;
+      display:flex; align-items:center; gap:8px;
+    }
+    .hero-eyebrow::before {
+      content:''; display:block;
+      width:24px; height:1px; background:var(--gold); opacity:.5;
+    }
+    .hero h1 {
+      font-size:40px; font-weight:800; line-height:1.08;
+      letter-spacing:-.02em; margin-bottom:10px;
+    }
+    .hero h1 span { color:var(--gold); }
+    .hero p { color:var(--muted2); font-size:14px; max-width:480px; }
+
+    /* ── CARD ── */
+    .card {
+      position:relative;
+      background:var(--surf);
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:30px 30px 28px;
+      margin-bottom:24px;
+      overflow:hidden;
+    }
+    .card-stripe {
+      position:absolute; top:0; left:0; right:0; height:2px;
+      background:linear-gradient(90deg, var(--gold) 0%, var(--blue) 50%, var(--green) 100%);
+      border-radius:14px 14px 0 0;
+    }
+    .card-label {
+      font-family:'DM Mono', monospace;
+      font-size:10px; letter-spacing:.18em; text-transform:uppercase;
+      color:var(--muted); margin-bottom:24px;
+    }
+
+    /* ── FIELDS ── */
+    .field { margin-bottom:20px; }
+    .field:last-of-type { margin-bottom:0; }
+    .field > label {
+      display:block;
+      font-size:11px; font-weight:700; letter-spacing:.12em;
+      text-transform:uppercase; color:var(--muted2);
+      margin-bottom:7px;
+    }
+    .input {
+      width:100%;
+      background:rgba(0,0,0,.35);
+      border:1.5px solid var(--border2);
+      border-radius:var(--r);
+      color:var(--txt);
+      font-family:'Syne', sans-serif; font-size:15px;
+      padding:11px 15px;
+      outline:none;
+      transition:border-color .2s, box-shadow .2s;
+    }
+    .input:focus {
+      border-color:var(--blue);
+      box-shadow:0 0 0 3px rgba(61,143,212,.12);
+    }
+    textarea.input { min-height:100px; resize:vertical; }
+
+    /* ── TYPE PILLS ── */
+    .pills { display:flex; gap:8px; flex-wrap:wrap; }
+    .pill {
+      padding:7px 18px; border-radius:100px; cursor:pointer;
+      font-size:12px; font-weight:700; letter-spacing:.05em;
+      border:1.5px solid var(--border2);
+      color:var(--muted2);
+      transition:all .16s; user-select:none;
+    }
+    .pill:hover { border-color:var(--muted2); color:var(--txt); }
+    .pill.active { background:var(--gold); border-color:var(--gold); color:#080a0f; }
+
+    /* ── DROP ZONE ── */
+    .dropzone {
+      border:2px dashed var(--border2);
+      border-radius:var(--r);
+      padding:26px 20px;
+      text-align:center;
+      position:relative; cursor:pointer;
+      transition:all .2s;
+    }
+    .dropzone:hover, .dropzone.over {
+      border-color:var(--gold);
+      background:rgba(212,168,67,.04);
+    }
+    .dropzone input[type=file] {
+      position:absolute; inset:0; opacity:0; cursor:pointer;
+      width:100%; height:100%;
+    }
+    .dz-icon { font-size:26px; margin-bottom:6px; }
+    .dz-txt { color:var(--muted2); font-size:13px; }
+    .dz-txt strong { color:var(--gold2); }
+    .dz-badge {
+      display:none; margin-top:12px;
+      background:rgba(61,143,212,.1); border:1px solid rgba(61,143,212,.25);
+      border-radius:6px; padding:7px 13px;
+      font-family:'DM Mono', monospace; font-size:11px; color:var(--blue2);
+      word-break:break-all;
+    }
+
+    /* ── BUTTONS ── */
+    .btns { display:flex; gap:10px; flex-wrap:wrap; margin-top:6px; }
+    .btn {
+      display:inline-flex; align-items:center; gap:7px;
+      padding:12px 24px; border-radius:var(--r);
+      font-family:'Syne', sans-serif; font-size:13px; font-weight:700;
+      letter-spacing:.04em; border:none; cursor:pointer;
+      transition:transform .14s, filter .14s, box-shadow .14s;
+    }
+    .btn:hover  { transform:translateY(-1px); filter:brightness(1.1); }
+    .btn:active { transform:scale(.97); filter:brightness(.95); }
+    .btn-primary {
+      background:var(--gold); color:#080a0f;
+      box-shadow:0 4px 18px rgba(212,168,67,.22);
+    }
+    .btn-ghost {
+      background:transparent; color:var(--muted2);
+      border:1.5px solid var(--border2);
+    }
+    .btn-ghost:hover { color:var(--txt); border-color:var(--muted2); filter:none; }
+    .btn-edit {
+      background:rgba(61,143,212,.12); color:var(--blue2);
+      border:1px solid rgba(61,143,212,.25);
+      font-size:12px; padding:7px 14px;
+    }
+    .btn-del {
+      background:rgba(212,80,61,.1); color:var(--red);
+      border:1px solid rgba(212,80,61,.2);
+      font-size:12px; padding:7px 14px;
+    }
+    .btn-view {
+      background:rgba(61,212,160,.1); color:var(--green);
+      border:1px solid rgba(61,212,160,.2);
+      font-size:12px; padding:7px 14px;
+    }
+
+    /* ── URL BOX ── */
+    #url-box {
+      display:none;
+      animation:up .32s cubic-bezier(.22,1,.36,1) both;
+    }
+    @keyframes up {
+      from { opacity:0; transform:translateY(16px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+    .url-box-inner {
+      background:rgba(0,0,0,.4);
+      border:1.5px solid rgba(61,212,160,.3);
+      border-radius:var(--r);
+      padding:14px 16px;
+      display:flex; align-items:flex-start; gap:12px;
+      margin-bottom:12px;
+    }
+    .url-val {
+      font-family:'DM Mono', monospace;
+      font-size:11.5px; color:var(--green);
+      word-break:break-all; flex:1; line-height:1.6;
+    }
+    .copy-btn {
+      flex-shrink:0; margin-top:2px;
+      background:rgba(61,212,160,.12);
+      border:1px solid rgba(61,212,160,.3);
+      border-radius:6px; color:var(--green);
+      font-family:'Syne', sans-serif;
+      font-size:11px; font-weight:700; padding:5px 13px;
+      cursor:pointer; transition:background .18s;
+      white-space:nowrap;
+    }
+    .copy-btn:hover { background:rgba(61,212,160,.22); }
+    .copy-btn.ok    { color:var(--txt); background:rgba(61,212,160,.3); }
+    .url-hint {
+      font-size:12px; color:var(--muted);
+      font-family:'DM Mono', monospace;
+    }
+
+    /* ── DIVIDER ── */
+    .div { border:none; border-top:1px solid var(--border); margin:40px 0; }
+
+    /* ── LIST HEADER ── */
+    .list-head {
+      display:flex; align-items:center;
+      justify-content:space-between; margin-bottom:18px;
+    }
+    .list-head h2 { font-size:17px; font-weight:800; }
+    .count {
+      background:rgba(61,143,212,.12); border:1px solid rgba(61,143,212,.25);
+      border-radius:100px; padding:3px 11px;
+      font-size:11px; font-weight:700; letter-spacing:.08em; color:var(--blue2);
+    }
+
+    /* ── FICHE ITEM ── */
+    .fiches { display:flex; flex-direction:column; gap:12px; }
+    .fiche {
+      background:var(--surf2);
+      border:1px solid var(--border);
+      border-radius:12px; padding:16px 20px;
+      display:flex; align-items:center; gap:16px;
+      transition:border-color .2s, background .2s;
+      animation:up .25s ease both;
+    }
+    .fiche:hover { border-color:var(--border2); background:rgba(255,255,255,.015); }
+    .fiche-ico {
+      width:42px; height:42px; border-radius:9px;
+      display:flex; align-items:center; justify-content:center;
+      font-size:20px; flex-shrink:0;
+    }
+    .ico-pdf  { background:rgba(212,80,61,.13); }
+    .ico-odt  { background:rgba(61,212,160,.1); }
+    .ico-word { background:rgba(61,143,212,.12); }
+    .fiche-body { flex:1; min-width:0; }
+    .fiche-body h3 {
+      font-size:15px; font-weight:700;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+    .fiche-meta {
+      font-size:11px; color:var(--muted2); margin-top:2px;
+      font-family:'DM Mono', monospace;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+    .fiche-acts { display:flex; gap:7px; flex-shrink:0; }
+
+    /* ── EMPTY ── */
+    .empty {
+      text-align:center; padding:50px 20px;
+      color:var(--muted); font-size:14px;
+    }
+    .empty-ico { font-size:36px; margin-bottom:12px; opacity:.35; }
+
+    /* ── TOAST ── */
+    #toast {
+      position:fixed; bottom:28px; left:50%;
+      transform:translateX(-50%) translateY(72px);
+      background:var(--surf2); border:1px solid var(--border2);
+      border-radius:9px; padding:11px 22px;
+      font-size:13px; font-weight:700;
+      box-shadow:0 8px 36px rgba(0,0,0,.55);
+      transition:transform .28s cubic-bezier(.22,1,.36,1);
+      z-index:999; white-space:nowrap;
+    }
+    #toast.show { transform:translateX(-50%) translateY(0); }
+    #toast.ok  { border-color:rgba(61,212,160,.4); color:var(--green); }
+    #toast.err { border-color:rgba(212,80,61,.4);  color:var(--red);   }
+    #toast.info { border-color:rgba(61,143,212,.4); color:var(--blue2); }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="nav-logo">
+    <div class="nav-logo-mark">✈</div>
+    PELO AIRWAYS
+  </a>
+  <div class="nav-sep"></div>
+  <div class="nav-chip">FileFac</div>
+  <a href="/" class="nav-back">← Accueil</a>
+</nav>
+
+<main>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-eyebrow">Gestionnaire de fiches</div>
+    <h1>Créez & partagez<br>vos <span>documents</span></h1>
+    <p>Associez un titre, un fichier et des détails — une URL longue et encodée est générée automatiquement.</p>
+  </div>
+
+  <!-- FORM -->
+  <div class="card" id="form-card">
+    <div class="card-stripe"></div>
+    <div class="card-label" id="form-mode-label">// Nouvelle fiche</div>
+
+    <div class="field">
+      <label>Titre de la fiche</label>
+      <input class="input" type="text" id="f-titre" placeholder="ex : Contrat de maintenance — Janvier 2026" />
+    </div>
+
+    <div class="field">
+      <label>Type de fichier</label>
+      <div class="pills">
+        <div class="pill active" data-t="pdf">📄 PDF</div>
+        <div class="pill" data-t="odt">📝 ODT</div>
+        <div class="pill" data-t="word">📘 Word</div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Fichier joint <span style="color:var(--muted);font-weight:400">(optionnel)</span></label>
+      <div class="dropzone" id="dz">
+        <input type="file" id="f-file" accept=".pdf,.odt,.doc,.docx" />
+        <div class="dz-icon">📎</div>
+        <div class="dz-txt"><strong>Cliquez</strong> ou glissez un fichier ici<br>
+          <span style="font-size:11px;color:var(--muted)">.pdf · .odt · .doc · .docx (stockage local)</span>
+        </div>
+        <div class="dz-badge" id="dz-badge"></div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Détails / Description</label>
+      <textarea class="input" id="f-details" placeholder="Numéro de référence, notes, informations complémentaires…"></textarea>
+    </div>
+
+    <div class="btns">
+      <button class="btn btn-primary" id="btn-save">💾 Sauvegarder &amp; générer l'URL</button>
+      <button class="btn btn-ghost"   id="btn-cancel" style="display:none">✕ Annuler</button>
+    </div>
+  </div>
+
+  <!-- URL RESULT -->
+  <div class="card" id="url-box" style="border-color:rgba(61,212,160,.22)">
+    <div class="card-stripe" style="background:var(--green)"></div>
+    <div class="card-label" style="color:var(--green)">// URL générée ✓</div>
+    <div class="url-box-inner">
+      <span class="url-val" id="url-val"></span>
+      <button class="copy-btn" id="copy-btn">Copier</button>
+    </div>
+    <div class="url-hint">Partageable — contient toutes les infos de la fiche encodées en base64.</div>
+  </div>
+
+  <hr class="div" />
+
+  <!-- LIST -->
+  <div class="list-head">
+    <h2>Fiches enregistrées</h2>
+    <span class="count" id="count">0</span>
+  </div>
+  <div class="fiches" id="list"></div>
+
+</main>
+
+<div id="toast"></div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- On charge app.js AVANT ce script             -->
+<!-- <script src="app.js"></script>                -->
+<!-- ═══════════════════════════════════════════ -->
+<script>
+/* ═══════════════════════════════════════════════════════
+   FileFac — logique complète
+   Stockage : App.FileFac.save() → localStorage (clé filefac_fiches)
+   URL encodée : /f/<base64url enrichi>
+═══════════════════════════════════════════════════════ */
+
+/* ── Intégration dans window.App ──────────────────── */
+window.App = window.App || {};
+window.App.FileFac = {
+  DB: 'filefac_fiches',
+  load() {
+    try { return JSON.parse(localStorage.getItem(this.DB)) || []; }
+    catch { return []; }
+  },
+  save(fiches) {
+    localStorage.setItem(this.DB, JSON.stringify(fiches));
+  },
+  upsert(fiche) {
+    const list = this.load();
+    const idx  = list.findIndex(f => f.id === fiche.id);
+    if (idx >= 0) list[idx] = fiche; else list.unshift(fiche);
+    this.save(list);
+  },
+  remove(id) {
+    this.save(this.load().filter(f => f.id !== id));
+  },
+  get(id) {
+    return this.load().find(f => f.id === id) || null;
+  }
+};
+
+/* ── Génération d'ID ──────────────────────────────── */
+function uid() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+}
+
+/* ── Encodage URL ─────────────────────────────────── */
+// Encode les données de la fiche en un token long et opaque
+// Format : /f/<token>
+// Le token contient : sel aléatoire intercalé + base64url du JSON
+function encodeToken(fiche) {
+  const payload = JSON.stringify({
+    id:      fiche.id,
+    titre:   fiche.titre,
+    type:    fiche.type,
+    details: fiche.details,
+    file:    fiche.fileName || '',
+    ts:      fiche.createdAt,
+  });
+  // base64url
+  const b64 = btoa(unescape(encodeURIComponent(payload)))
+    .replace(/=/g, '')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_');
+
+  // Sel aléatoire 16 chars
+  const salt = Array.from({length: 16}, () =>
+    '0123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz'[
+      Math.floor(Math.random() * 58)
+    ]).join('');
+
+  // Intercale le sel dans le base64 toutes les 6 chars
+  let out = '';
+  for (let i = 0; i < b64.length; i++) {
+    out += b64[i];
+    if ((i + 1) % 6 === 0 && i < salt.length * 6)
+      out += salt[Math.floor(i / 6)] ?? '';
+  }
+  // Ajoute le sel en suffixe pour pouvoir décoder
+  return out + '~' + salt;
+}
+
+function decodeToken(token) {
+  try {
+    const [encoded, salt] = token.split('~');
+    if (!salt) return null;
+    // Retire les chars du sel intercalés
+    let b64 = '';
+    let saltIdx = 0;
+    for (let i = 0; i < encoded.length; i++) {
+      if ((i % 7) === 6 && saltIdx < salt.length) {
+        // position du sel intercalé (toutes les 7 chars dans la sortie = 6 b64 + 1 sel)
+        saltIdx++;
+      } else {
+        b64 += encoded[i];
+      }
+    }
+    return JSON.parse(decodeURIComponent(escape(atob(
+      b64.replace(/-/g, '+').replace(/_/g, '/')
+         + '=='.slice(0, (4 - b64.length % 4) % 4)
+    ))));
+  } catch { return null; }
+}
+
+function buildUrl(fiche) {
+  const token = encodeToken(fiche);
+  return `${location.origin}/f/${token}`;
+}
+
+/* ── Toast ────────────────────────────────────────── */
+let _tt;
+function toast(msg, type = 'ok') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = `toast ${type} show`;
+  clearTimeout(_tt);
+  _tt = setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+/* ── State ────────────────────────────────────────── */
+let editingId    = null;
+let selectedType = 'pdf';
+let selectedFile = '';
+
+/* ── Type pills ───────────────────────────────────── */
+document.querySelectorAll('.pill').forEach(p => {
+  p.addEventListener('click', () => {
+    document.querySelectorAll('.pill').forEach(x => x.classList.remove('active'));
+    p.classList.add('active');
+    selectedType = p.dataset.t;
+    const acc = { pdf: '.pdf', odt: '.odt', word: '.doc,.docx' };
+    document.getElementById('f-file').accept = acc[selectedType];
+  });
+});
+
+/* ── Drop zone ────────────────────────────────────── */
+const dz    = document.getElementById('dz');
+const fFile = document.getElementById('f-file');
+const badge = document.getElementById('dz-badge');
+
+fFile.addEventListener('change', () => {
+  if (fFile.files[0]) setFile(fFile.files[0].name);
+});
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('over'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('over'));
+dz.addEventListener('drop', e => {
+  e.preventDefault(); dz.classList.remove('over');
+  if (e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0].name);
+});
+function setFile(name) {
+  selectedFile = name;
+  badge.textContent = '📎 ' + name;
+  badge.style.display = 'block';
+}
+
+/* ── Sauvegarde ───────────────────────────────────── */
+document.getElementById('btn-save').addEventListener('click', save);
+document.getElementById('btn-cancel').addEventListener('click', cancelEdit);
+
+function save() {
+  const titre   = document.getElementById('f-titre').value.trim();
+  const details = document.getElementById('f-details').value.trim();
+  if (!titre) { toast('⚠ Renseignez un titre.', 'err'); return; }
+
+  const fiche = {
+    id:        editingId || uid(),
+    titre,
+    type:      selectedType,
+    fileName:  selectedFile,
+    details,
+    createdAt: editingId
+      ? (App.FileFac.get(editingId)?.createdAt || new Date().toISOString())
+      : new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+
+  App.FileFac.upsert(fiche);
+  const url = buildUrl(fiche);
+  showUrl(url);
+  renderList();
+  toast(editingId ? '✓ Fiche mise à jour' : '✓ Fiche créée', 'ok');
+  cancelEdit();
+}
+
+function showUrl(url) {
+  document.getElementById('url-val').textContent = url;
+  const box = document.getElementById('url-box');
+  box.style.display = 'block';
+  box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+/* ── Edition ──────────────────────────────────────── */
+function startEdit(id) {
+  const f = App.FileFac.get(id);
+  if (!f) return;
+  editingId = id;
+  document.getElementById('f-titre').value   = f.titre;
+  document.getElementById('f-details').value = f.details;
+  selectedType = f.type;
+  document.querySelectorAll('.pill').forEach(p => {
+    p.classList.toggle('active', p.dataset.t === f.type);
+  });
+  if (f.fileName) {
+    selectedFile = f.fileName;
+    badge.textContent = '📎 ' + f.fileName;
+    badge.style.display = 'block';
+  }
+  document.getElementById('form-mode-label').textContent = '// Édition de la fiche';
+  document.getElementById('btn-cancel').style.display = 'inline-flex';
+  document.getElementById('form-card').scrollIntoView({ behavior:'smooth' });
+  toast('Mode édition activé', 'info');
+}
+
+function cancelEdit() {
+  editingId    = null;
+  selectedFile = '';
+  document.getElementById('f-titre').value   = '';
+  document.getElementById('f-details').value = '';
+  badge.style.display = 'none'; badge.textContent = '';
+  document.querySelectorAll('.pill').forEach((p,i) => p.classList.toggle('active', i===0));
+  selectedType = 'pdf';
+  document.getElementById('form-mode-label').textContent = '// Nouvelle fiche';
+  document.getElementById('btn-cancel').style.display = 'none';
+}
+
+/* ── Suppression ──────────────────────────────────── */
+function deleteFiche(id) {
+  if (!confirm('Supprimer cette fiche ?')) return;
+  App.FileFac.remove(id);
+  renderList();
+  toast('Fiche supprimée', 'err');
+}
+
+/* ── Voir URL ─────────────────────────────────────── */
+function viewFiche(id) {
+  const f = App.FileFac.get(id);
+  if (!f) return;
+  showUrl(buildUrl(f));
+}
+
+/* ── Copier URL ───────────────────────────────────── */
+document.getElementById('copy-btn').addEventListener('click', function() {
+  const url = document.getElementById('url-val').textContent;
+  navigator.clipboard.writeText(url).then(() => {
+    this.textContent = 'Copié ✓';
+    this.classList.add('ok');
+    setTimeout(() => { this.textContent = 'Copier'; this.classList.remove('ok'); }, 2000);
+  });
+});
+
+/* ── Icônes par type ──────────────────────────────── */
+const ICONS = { pdf:'📄', odt:'📝', word:'📘' };
+const ICO_CLS = { pdf:'ico-pdf', odt:'ico-odt', word:'ico-word' };
+
+/* ── Rendu de la liste ────────────────────────────── */
+function renderList() {
+  const fiches = App.FileFac.load();
+  const list   = document.getElementById('list');
+  const count  = document.getElementById('count');
+  count.textContent = fiches.length + ' fiche' + (fiches.length > 1 ? 's' : '');
+
+  if (!fiches.length) {
+    list.innerHTML = `<div class="empty">
+      <div class="empty-ico">🗂</div>
+      Aucune fiche enregistrée — créez-en une ci-dessus.
+    </div>`;
+    return;
+  }
+
+  list.innerHTML = fiches.map(f => {
+    const dt = new Date(f.updatedAt || f.createdAt).toLocaleDateString('fr-FR', {
+      day:'2-digit', month:'short', year:'numeric'
+    });
+    const meta = [f.fileName || f.type.toUpperCase(), dt].filter(Boolean).join(' · ');
+    return `<div class="fiche">
+      <div class="fiche-ico ${ICO_CLS[f.type]}">${ICONS[f.type]}</div>
+      <div class="fiche-body">
+        <h3>${esc(f.titre)}</h3>
+        <div class="fiche-meta">${esc(meta)}</div>
+      </div>
+      <div class="fiche-acts">
+        <button class="btn btn-view" onclick="viewFiche('${f.id}')">🔗 URL</button>
+        <button class="btn btn-edit" onclick="startEdit('${f.id}')">✏️ Éditer</button>
+        <button class="btn btn-del"  onclick="deleteFiche('${f.id}')">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+/* ── Route /f/<token> : lecture de la fiche ────────── */
+// Si on arrive sur /f/<token>, on affiche la vue de la fiche
+(function checkRoute() {
+  const m = location.pathname.match(/^\/f\/(.+)$/);
+  if (!m) { renderList(); return; }
+
+  const data = decodeToken(decodeURIComponent(m[1]));
+  if (!data) {
+    document.querySelector('main').innerHTML = `
+      <div style="text-align:center;padding:80px 20px">
+        <div style="font-size:48px;margin-bottom:20px">❌</div>
+        <h1 style="font-size:28px;font-weight:800;margin-bottom:10px">URL invalide</h1>
+        <p style="color:var(--muted2)">Ce lien ne correspond à aucune fiche valide.</p>
+        <a href="/filefac.html" style="margin-top:24px;display:inline-block;color:var(--gold)">← Retour FileFac</a>
+      </div>`;
+    return;
+  }
+
+  // Affichage de la fiche depuis l'URL
+  const typeLabel = { pdf:'PDF', odt:'ODT', word:'Word' }[data.type] || data.type;
+  const dt = data.ts ? new Date(data.ts).toLocaleDateString('fr-FR', {
+    weekday:'long', day:'numeric', month:'long', year:'numeric'
+  }) : '—';
+
+  document.querySelector('main').innerHTML = `
+    <div style="max-width:640px;margin:0 auto">
+      <a href="/filefac.html" style="font-size:12px;color:var(--muted2);text-decoration:none;
+         font-family:'DM Mono',monospace;letter-spacing:.08em;
+         display:inline-flex;align-items:center;gap:6px;margin-bottom:32px">
+        ← Toutes les fiches
+      </a>
+      <div class="card">
+        <div class="card-stripe"></div>
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:24px">
+          <div class="fiche-ico ${ICO_CLS[data.type] || 'ico-pdf'}" style="width:52px;height:52px;font-size:24px">
+            ${ICONS[data.type] || '📄'}
+          </div>
+          <div>
+            <div style="font-size:11px;font-family:'DM Mono',monospace;letter-spacing:.12em;
+                        text-transform:uppercase;color:var(--muted2);margin-bottom:4px">
+              Fiche ${typeLabel}
+            </div>
+            <h1 style="font-size:22px;font-weight:800;line-height:1.2">${esc(data.titre)}</h1>
+          </div>
+        </div>
+        ${data.details ? `
+        <div style="background:rgba(0,0,0,.3);border:1px solid var(--border2);border-radius:var(--r);
+                    padding:16px 18px;margin-bottom:18px">
+          <div style="font-size:10px;font-family:'DM Mono',monospace;letter-spacing:.14em;
+                      text-transform:uppercase;color:var(--muted);margin-bottom:8px">Détails</div>
+          <p style="font-size:14px;color:var(--txt);line-height:1.7;white-space:pre-wrap">${esc(data.details)}</p>
+        </div>` : ''}
+        <div style="display:flex;gap:20px;flex-wrap:wrap">
+          ${data.file ? `<div>
+            <div style="font-size:10px;font-family:'DM Mono',monospace;letter-spacing:.14em;
+                        text-transform:uppercase;color:var(--muted);margin-bottom:4px">Fichier</div>
+            <div style="font-size:13px;font-family:'DM Mono',monospace;color:var(--blue2)">${esc(data.file)}</div>
+          </div>` : ''}
+          <div>
+            <div style="font-size:10px;font-family:'DM Mono',monospace;letter-spacing:.14em;
+                        text-transform:uppercase;color:var(--muted);margin-bottom:4px">Créée le</div>
+            <div style="font-size:13px;color:var(--muted2)">${dt}</div>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:12px">
+        <div class="url-box-inner">
+          <span class="url-val" style="font-size:10.5px">${esc(location.href)}</span>
+          <button class="copy-btn" onclick="navigator.clipboard.writeText(location.href);this.textContent='Copié ✓';this.classList.add('ok')">Copier</button>
+        </div>
+      </div>
+    </div>`;
+})();
+</script>
+</body>
+</html>
