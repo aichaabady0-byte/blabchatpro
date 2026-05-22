@@ -1,6 +1,6 @@
 /**
  * ═══════════════════════════════════════════════════════════
- *  PELO AIRWAYS — app.js
+ *  PELO AIRWAYS — app.js  (CÔTÉ NAVIGATEUR)
  *  Intégration Firebase Auth + Firestore + Realtime DB
  *  Admin : aichaabady0@gmail.com
  *
@@ -168,8 +168,8 @@ window.App = {
 
   // ───────────────────────────────────────────────
   //  App.FileFac — Gestionnaire de fiches
-  //  Utilisé par filefac.html pour stocker et récupérer
-  //  les fiches (titre, type, détails, fichier) en localStorage.
+  //  Utilisé par filefac.html pour stocker/récupérer
+  //  les fiches en localStorage.
   //
   //  Clé localStorage : "filefac_fiches"
   //  Chaque fiche :
@@ -200,7 +200,6 @@ window.App = {
      * Crée ou met à jour une fiche.
      * Si une fiche avec le même id existe → mise à jour.
      * Sinon → ajout en tête de liste.
-     * @param {Object} fiche — { id, titre, type, fileName, details, createdAt, updatedAt }
      */
     upsert(fiche) {
       const list = this.load();
@@ -208,7 +207,7 @@ window.App = {
       if (idx >= 0) {
         list[idx] = fiche;
       } else {
-        list.unshift(fiche); // plus récent en premier
+        list.unshift(fiche);
       }
       this.save(list);
       console.log("[App.FileFac] Fiche sauvegardée :", fiche.id, fiche.titre);
@@ -216,7 +215,6 @@ window.App = {
 
     /**
      * Supprime une fiche par son ID.
-     * @param {string} id
      */
     remove(id) {
       const list = this.load().filter(f => f.id !== id);
@@ -226,15 +224,13 @@ window.App = {
 
     /**
      * Récupère une fiche par son ID.
-     * @param {string} id
-     * @returns {Object|null}
      */
     get(id) {
       return this.load().find(f => f.id === id) || null;
     },
 
     /**
-     * Vide toutes les fiches (utilitaire de debug).
+     * Vide toutes les fiches (debug).
      */
     clear() {
       this.save([]);
